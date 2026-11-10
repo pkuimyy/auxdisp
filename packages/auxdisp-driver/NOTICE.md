@@ -15,6 +15,10 @@ explicit cleanup. Serial connection exhaustion and USB transfer failures raise
 `DisplayError` instead of exiting the application or silently returning. Rev C
 discovery supports passive enumeration while preserving the original wake-up
 sequence when opening a device or explicitly requesting active discovery.
+Turing USB clearing generates a transparent PNG at the detected native product
+resolution and resets the host image state after a successful transfer. This
+replaces the upstream fixed 480x1920 image, which left a white stripe on the
+tested 5.2-inch display; a native-size control image cleared it correctly.
 Device command formats, successful-transfer ordering, and the legacy file-upload
 retry are retained. The extraction and these changes are not a certification of
 hardware compatibility.

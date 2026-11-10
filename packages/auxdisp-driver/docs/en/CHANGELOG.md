@@ -12,3 +12,4 @@
 - Report exhausted serial connections and USB transfer failures through `DisplayError`.
 - Make Rev C discovery passive by default, with explicit wake-up support.
 - Add project URLs and absolute documentation links suitable for PyPI.
+- Clear Turing USB displays at their native resolution and reset the host image state to avoid stripes and stale pixels after partial updates.

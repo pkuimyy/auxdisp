@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-10",
+  "platform": "Windows",
+  "device": {"vendor_id": 7358, "product_id": 80, "native_size": [720, 1280]},
+  "orientation": "LANDSCAPE",
+  "command_id": 102,
+  "pixel": [0, 0, 0, 0],
+  "legacy_clear": {
+    "png_size": [480, 1920],
+    "response_prefix_hex": "66c83e5a460400000000000000000000",
+    "user_observation": "Black screen with a white stripe; stripe reappeared after ScreenOn"
+  },
+  "native_size_control": {
+    "png_size": [720, 1280],
+    "response_prefix_hex": "66c86ef1470400000000000000000000",
+    "user_observation": "Uniform black screen; white stripe disappeared"
+  },
+  "scope": "Observed on one 5.2-inch device; other model sizes require hardware acceptance"
+}

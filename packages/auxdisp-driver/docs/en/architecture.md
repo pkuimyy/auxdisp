@@ -28,6 +28,8 @@ The public `show()` accepts a Pillow image and forwards to the original `Display
 
 The simulator writes `screencap.png` and uses the original default local web port 5678. Run separate simulator instances in different working directories; the current upstream simulator uses process-global screenshot and port settings.
 
+Turing USB `Clear()` sends a transparent PNG at the native portrait size from the product table, then clears the host image state in the current orientation after a successful transfer. Subsequent partial updates do not restore old content. `ScreenOff()` retains the clear-then-zero-brightness ordering.
+
 ### Error handling
 
 Exhausted serial connection retries raise `DisplayError` without terminating the caller. Turing USB configuration access, request writes, and response reads raise `DisplayError` on transport failure, incomplete writes, or empty responses; underlying USB exceptions are retained as `__cause__`. `Display.show()`, brightness changes, and initialization propagate these errors. Flush reads after a valid response may finish with a timeout. Existing file-upload helpers retain their legacy retry and boolean result convention, returning `False` on failure.
