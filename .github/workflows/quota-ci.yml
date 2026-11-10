@@ -1,0 +1,45 @@
+name: Quota Placeholder CI
+
+on:
+  push:
+    paths:
+      - "apps/auxdisp-codex-quota/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "README.md"
+      - ".gitignore"
+      - "LICENSE"
+      - ".github/workflows/quota-ci.yml"
+  pull_request:
+    paths:
+      - "apps/auxdisp-codex-quota/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "README.md"
+      - ".gitignore"
+      - "LICENSE"
+      - ".github/workflows/quota-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/auxdisp-codex-quota
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/auxdisp-codex-quota/uv.lock
+      - run: uv sync --locked --all-groups --no-sources
+      - run: uv run ruff check src tests
+      - run: uv run pytest
+      - run: uv build --no-sources

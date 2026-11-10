@@ -1,0 +1,12 @@
+.venv*/
+.tmp-run/
+.wheels/
+.verify-install*/
+build/
+dist/
+*.egg-info/
+log.log
+tmp
+screencap.png
+tests/screencap-test.png
+__pycache__/

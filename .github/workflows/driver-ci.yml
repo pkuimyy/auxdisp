@@ -1,0 +1,53 @@
+name: Driver CI
+
+on:
+  push:
+    paths:
+      - "packages/auxdisp-driver/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "README.md"
+      - ".gitignore"
+      - "LICENSE"
+      - ".github/workflows/driver-ci.yml"
+  pull_request:
+    paths:
+      - "packages/auxdisp-driver/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "README.md"
+      - ".gitignore"
+      - "LICENSE"
+      - ".github/workflows/driver-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-build-install:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: packages/auxdisp-driver
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: packages/auxdisp-driver/uv.lock
+      - run: uv sync --locked --all-groups
+      - run: uv run ruff check src tests examples
+      - run: uv run pytest
+      - run: uv build --no-sources
+      - name: Install wheel in a clean environment
+        run: |
+          uv venv .venv-wheel --python 3.13
+          $wheel = Get-ChildItem dist\*.whl | Select-Object -First 1 -ExpandProperty FullName
+          uv pip install --python .venv-wheel\Scripts\python.exe $wheel
+          .\.venv-wheel\Scripts\python.exe -c "import pathlib, auxdisp_driver; p=pathlib.Path(auxdisp_driver.__file__).resolve(); assert '.venv-wheel' in str(p); print(p)"
+      - name: Check wheel excludes application and resource files
+        run: .\.venv\Scripts\python.exe scripts\check_wheel.py

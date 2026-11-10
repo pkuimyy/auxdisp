@@ -1,0 +1,61 @@
+# Local plans, process notes, analysis, and acceptance records
+.codex/
+.tools/
+.artifacts/
+
+# Python bytecode and package/build outputs
+**/__pycache__/
+**/*.py[cod]
+*$py.class
+**/build/
+**/dist/
+**/*.egg-info/
+**/pip-wheel-metadata/
+
+# Per-project virtual environments
+**/.venv/
+**/.venv-*/
+**/venv/
+**/env/
+**/ENV/
+
+# uv caches (uv.lock files are intentionally tracked)
+**/.uv-cache/
+**/.cache/uv/
+
+# Test, lint, type-check, and coverage caches/reports
+**/.pytest_cache/
+**/pytest-cache-files-*/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.pyright/
+**/.tox/
+**/.nox/
+**/htmlcov/
+**/.coverage
+**/.coverage.*
+**/coverage.xml
+**/junit.xml
+
+# Local environment/secrets files; keep safe templates trackable
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+
+# Local editor and operating-system files
+**/.vscode/
+**/.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Driver simulator and temporary logs/files
+**/.tmp-run/
+**/.verify-install*/
+**/.wheels/
+**/*.log
+**/tmp
+**/screencap.png
+**/tests/screencap-test.png
