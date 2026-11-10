@@ -1,4 +1,4 @@
-# 驱动使用指南
+# auxdisp-driver — 驱动使用指南
 
 [English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/usage.md)
 

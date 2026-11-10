@@ -121,7 +121,7 @@ class CollectionWorker:
     def request(self) -> bool:
         if (self.thread is not None and self.thread.is_alive()) or not self.results.empty():
             return False
-        self.thread = Thread(target=self._run, name="quota-collector", daemon=True)
+        self.thread = Thread(target=self._run, name="auxdisp-codex-quota-collector", daemon=True)
         self.thread.start()
         return True
 

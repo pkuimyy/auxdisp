@@ -1,4 +1,4 @@
-# Driver usage guide
+# auxdisp-driver — Driver usage guide
 
 [中文版](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/usage.md)
 

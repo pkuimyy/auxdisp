@@ -1,4 +1,4 @@
-# Changelog
+# auxdisp-codex-quota — Changelog
 
 [中文版](../zh/CHANGELOG.md)
 

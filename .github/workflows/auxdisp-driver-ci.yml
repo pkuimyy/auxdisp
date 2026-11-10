@@ -1,4 +1,4 @@
-name: Driver CI
+name: auxdisp-driver CI
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - "README.md"
       - ".gitignore"
       - "LICENSE"
-      - ".github/workflows/driver-ci.yml"
+      - ".github/workflows/auxdisp-driver-ci.yml"
   pull_request:
     paths:
       - "packages/auxdisp-driver/**"
@@ -18,7 +18,7 @@ on:
       - "README.md"
       - ".gitignore"
       - "LICENSE"
-      - ".github/workflows/driver-ci.yml"
+      - ".github/workflows/auxdisp-driver-ci.yml"
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,7 @@ permissions:
 
 jobs:
   test-build-install:
+    name: Test, build, and install auxdisp-driver
     runs-on: windows-latest
     defaults:
       run:
@@ -43,11 +44,11 @@ jobs:
       - run: uv run ruff check src tests examples
       - run: uv run pytest
       - run: uv build --no-sources
-      - name: Install wheel in a clean environment
+      - name: Install auxdisp-driver wheel in a clean environment
         run: |
           uv venv .venv-wheel --python 3.13
           $wheel = Get-ChildItem dist\*.whl | Select-Object -First 1 -ExpandProperty FullName
           uv pip install --python .venv-wheel\Scripts\python.exe $wheel
           .\.venv-wheel\Scripts\python.exe -c "import pathlib, auxdisp_driver; p=pathlib.Path(auxdisp_driver.__file__).resolve(); assert '.venv-wheel' in str(p); print(p)"
-      - name: Check wheel excludes application and resource files
+      - name: Check auxdisp-driver wheel excludes application and resource files
         run: .\.venv\Scripts\python.exe scripts\check_wheel.py

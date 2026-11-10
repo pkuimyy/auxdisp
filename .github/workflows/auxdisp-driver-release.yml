@@ -1,4 +1,4 @@
-name: Driver Release
+name: auxdisp-driver Release
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: driver-release-${{ github.ref }}
+  group: auxdisp-driver-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   build:
-    name: Validate, test, and build driver
+    name: Validate, test, and build auxdisp-driver
     runs-on: windows-latest
     outputs:
       version: ${{ steps.release.outputs.version }}
@@ -34,7 +34,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: packages/auxdisp-driver/uv.lock
       - run: uv sync --locked --all-groups --no-sources
-      - name: Require the driver tag to match package metadata
+      - name: Require the auxdisp-driver tag to match package metadata
         id: release
         env:
           RELEASE_TAG: ${{ github.ref_name }}
@@ -44,14 +44,14 @@ jobs:
       - run: uv build --no-sources
       - run: uv run --no-sync python scripts/check_wheel.py
       - run: uv tool run --from twine twine check --strict dist/*.whl dist/*.tar.gz
-      - name: Verify the built wheel installs independently
+      - name: Verify the auxdisp-driver wheel installs independently
         env:
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
         run: |
           uv venv .venv-wheel --python 3.13
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $wheels = @(Get-ChildItem dist/*.whl)
-          if ($wheels.Count -ne 1) { throw "Expected exactly one driver wheel" }
+          if ($wheels.Count -ne 1) { throw "Expected exactly one auxdisp-driver wheel" }
           $wheel = $wheels[0].FullName
           uv pip install --python .venv-wheel/Scripts/python.exe $wheel
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -66,7 +66,7 @@ jobs:
           retention-days: 14
 
   publish-pypi:
-    name: Publish driver to PyPI
+    name: Publish auxdisp-driver to PyPI
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -85,7 +85,7 @@ jobs:
           packages-dir: dist/
 
   github-release:
-    name: Publish the same distributions to GitHub Release
+    name: Publish auxdisp-driver distributions to GitHub Release
     needs: [build, publish-pypi]
     runs-on: ubuntu-latest
     permissions:
@@ -95,7 +95,7 @@ jobs:
         with:
           name: auxdisp-driver-distributions
           path: dist
-      - name: Create the driver release and attach wheel and source archive
+      - name: Create the auxdisp-driver release and attach wheel and source archive
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

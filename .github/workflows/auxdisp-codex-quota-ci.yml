@@ -1,4 +1,4 @@
-name: Quota App CI
+name: auxdisp-codex-quota CI
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
       - "README.md"
       - ".gitignore"
       - "LICENSE"
-      - ".github/workflows/quota-ci.yml"
+      - ".github/workflows/auxdisp-codex-quota-ci.yml"
   pull_request:
     paths:
       - "apps/auxdisp-codex-quota/**"
@@ -18,7 +18,7 @@ on:
       - "README.md"
       - ".gitignore"
       - "LICENSE"
-      - ".github/workflows/quota-ci.yml"
+      - ".github/workflows/auxdisp-codex-quota-ci.yml"
   workflow_dispatch:
 
 permissions:
@@ -26,6 +26,7 @@ permissions:
 
 jobs:
   test-build-install:
+    name: Test, build, and install auxdisp-codex-quota
     runs-on: windows-latest
     defaults:
       run:
@@ -42,7 +43,7 @@ jobs:
       - run: uv sync --locked --all-groups --no-sources
       - run: uv run --locked --no-sources ruff check src tests
       - run: uv run --locked --no-sources pytest
-      - name: Render synthetic previews without USB or account access
+      - name: Render auxdisp-codex-quota synthetic previews without USB or account access
         run: |
           uv run --locked --no-sources auxdisp-codex-quota --preview previews/dual.png
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -50,7 +51,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           uv run --locked --no-sources auxdisp-codex-quota --preview previews/error.png --simulate-error
       - run: uv build --no-sources
-      - name: Install app wheel with driver resolved from PyPI
+      - name: Install auxdisp-codex-quota wheel with auxdisp-driver resolved from PyPI
         run: |
           uv venv .venv-wheel --python 3.13
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -62,6 +63,6 @@ jobs:
           ./.venv-wheel/Scripts/auxdisp-codex-quota.exe --preview previews/installed-wheel.png
       - uses: actions/upload-artifact@v4
         with:
-          name: quota-app-previews
+          name: auxdisp-codex-quota-previews
           path: apps/auxdisp-codex-quota/previews/*.png
           if-no-files-found: error

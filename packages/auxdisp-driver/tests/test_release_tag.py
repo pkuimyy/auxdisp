@@ -1,4 +1,4 @@
-"""Publishing must require an explicit, matching driver version tag."""
+"""Publishing must require an explicit, matching auxdisp-driver version tag."""
 
 import importlib.util
 from pathlib import Path
@@ -33,6 +33,6 @@ def test_wrong_or_ambiguous_tags_cannot_publish(tag):
         check_release.validate_tag(tag, {"name": "auxdisp-driver", "version": "0.1.0"})
 
 
-def test_driver_tag_cannot_release_the_placeholder_app():
+def test_auxdisp_driver_tag_cannot_release_auxdisp_codex_quota():
     with pytest.raises(ValueError, match="only publish auxdisp-driver"):
         check_release.validate_tag("auxdisp-driver-v0.1.0", {"name": "auxdisp-codex-quota", "version": "0.1.0"})

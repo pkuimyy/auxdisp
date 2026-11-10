@@ -1,8 +1,8 @@
-# 驱动发布
+# auxdisp-driver 发布
 
 [English version](../en/releases.md) | [本地开发](development.md)
 
-驱动通过 `.github/workflows/driver-release.yml` 发布。只有推送 `auxdisp-driver-v<版本>` tag 才会触发；普通分支推送、PR 和应用 tag 不会上传 PyPI。推送发布 tag 是显式的发布动作，应在版本和实机验收范围确认后进行。
+`auxdisp-driver` 通过 `.github/workflows/auxdisp-driver-release.yml` 发布。只有推送 `auxdisp-driver-v<版本>` tag 才会触发；普通分支推送、PR 和应用 tag 不会上传 PyPI。推送发布 tag 是显式的发布动作，应在版本和实机验收范围确认后进行。
 
 ## 首次配置
 
@@ -15,10 +15,16 @@
 | PyPI 项目名 | `auxdisp-driver` |
 | GitHub owner | `pkuimyy` |
 | Repository | `auxdisp` |
-| Workflow filename | `driver-release.yml` |
+| Workflow filename | `auxdisp-driver-release.yml` |
 | Environment | `pypi` |
 
 已有 PyPI 项目时，在该项目的 Publishing 设置中添加相同配置。工作流使用 OIDC，无需保存 PyPI API token。配置方式见 [PyPI Trusted Publishing 文档](https://docs.pypi.org/trusted-publishers/using-a-publisher/)。这些账号和环境配置不由本地 YAML 文件代替，需要管理员在相应服务中完成。
+
+## 工作流更名后的配置迁移
+
+工作流文件名统一为 `auxdisp-driver-release.yml` 后，若已有 Trusted Publisher 按旧文件名配置，应在下次发布前按上表注册匹配新文件名的发布者。PyPI 会校验获准发布的 workflow 文件名，仅重命名仓库文件不会更新 PyPI 的信任配置，详见 [PyPI 配置说明](https://docs.pypi.org/trusted-publishers/adding-a-publisher/)。本次命名调整不创建 tag，也不触发发布。
+
+CI 任务显示名称也使用完整项目名；若 GitHub 分支规则配置了必需状态检查，应同步核对新的任务名称。
 
 ## 版本与 tag
 
@@ -51,7 +57,7 @@ git push origin auxdisp-driver-v0.1.0
 4. Linux 发布任务在 `pypi` 环境中，通过 Trusted Publishing 上传同一份文件。
 5. PyPI 上传成功后，创建对应的 GitHub Release，并附上同一份 wheel 和源码压缩包。`a`、`b`、`rc` 版本标记为 GitHub 预发布；普通版本不作此标记。
 
-构建任务只有仓库读取权限，PyPI 任务只有 OIDC 权限，GitHub Release 任务拥有发布制品所需的 `contents: write`。两个发布任务都不会重新构建文件，应用占位项目不参与此发布流程。
+构建任务只有仓库读取权限，PyPI 任务只有 OIDC 权限，GitHub Release 任务拥有发布制品所需的 `contents: write`。两个发布任务都不会重新构建文件，`auxdisp-codex-quota` 不参与此发布流程。
 
 PyPI 与 GitHub 无法原子发布：若 PyPI 已成功而 GitHub Release 失败，应在 artifact 仍保留时只重跑失败任务，复用该次构建产物。若失败的创建操作遗留 draft Release，先检查其资产再完成发布，不要盲目覆盖。若 PyPI 部分文件已上传，先核对该版本现存文件与本次 artifact，再决定恢复方式；工作流不会静默跳过重复文件。已上传的版本不可用重新打包的文件覆盖。
 

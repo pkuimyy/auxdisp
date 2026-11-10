@@ -1,4 +1,4 @@
-# AuxDisp Driver
+# auxdisp-driver
 
 [English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/README.md)
 

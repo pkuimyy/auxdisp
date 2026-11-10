@@ -1,4 +1,4 @@
-"""Validate an explicit driver release tag before publishing any artifacts."""
+"""Validate an explicit auxdisp-driver release tag before publishing any artifacts."""
 
 import argparse
 import os
@@ -14,7 +14,7 @@ TAG = re.compile(
 
 
 def validate_tag(tag, project):
-    """Accept matching final, alpha, beta, and release-candidate driver tags."""
+    """Accept matching final, alpha, beta, and release-candidate auxdisp-driver tags."""
     if project.get("name") != "auxdisp-driver":
         raise ValueError("Release workflow may only publish auxdisp-driver")
     match = TAG.fullmatch(tag)

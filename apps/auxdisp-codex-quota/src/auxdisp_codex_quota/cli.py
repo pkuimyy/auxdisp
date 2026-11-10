@@ -29,7 +29,9 @@ class FixtureCollector:
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Codex account quotas on a Turing USB 5.2-inch display")
+    parser = argparse.ArgumentParser(
+        prog="auxdisp-codex-quota", description="Codex account quotas on a Turing USB 5.2-inch display",
+    )
     parser.add_argument("--config", type=Path, help="settings TOML; defaults to ./config.toml if present")
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--demo", action="store_true", help="use bundled synthetic accounts instead of codex-auth")

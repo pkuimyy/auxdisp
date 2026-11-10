@@ -95,7 +95,7 @@ class DisplayWorker:
         self._wake = Event()
         self._stop = Event()
         self._desired = None
-        self.thread = Thread(target=self._run, name="quota-display", daemon=True)
+        self.thread = Thread(target=self._run, name="auxdisp-codex-quota-display", daemon=True)
         self.thread.start()
 
     def submit(self, image, signature):

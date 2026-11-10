@@ -1,4 +1,4 @@
-# 架构与 API
+# auxdisp-driver — 架构与 API
 
 [English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/architecture.md)
 

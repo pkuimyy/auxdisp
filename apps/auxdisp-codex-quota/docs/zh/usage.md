@@ -1,4 +1,4 @@
-# 配置与开发说明
+# auxdisp-codex-quota — 配置与开发说明
 
 [English version](../en/usage.md) | [返回介绍](README.md)
 
@@ -85,6 +85,6 @@ uv run --locked --no-sources pytest
 uv build --no-sources
 ```
 
-应用 CI 独立构建，始终从 PyPI 安装 `auxdisp-driver`，不使用 monorepo 路径依赖；测试和预览只用合成账户与伪设备。虚拟环境与共享缓存约定见[本地开发](../../../../docs/zh/development.md)。
+`auxdisp-codex-quota` CI 独立构建，始终从 PyPI 安装 `auxdisp-driver`，不使用 monorepo 路径依赖；测试和预览只用合成账户与伪设备。虚拟环境与共享缓存约定见[本地开发](../../../../docs/zh/development.md)。
 
 当前只支持一块 Turing USB 5.2 英寸设备与 Landscape 布局。USB 重连依靠最近一帧重试；操作系统 USB 调用本身可能短暂阻塞显示线程。75 秒集成运行不能代替长时间稳定性验证。首次人工验收前不扩展 GUI、账户管理、动画或其他屏幕型号。

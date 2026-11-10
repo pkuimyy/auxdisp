@@ -1,4 +1,4 @@
-# Supported device drivers
+# auxdisp-driver — Supported device drivers
 
 [中文版](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)
 

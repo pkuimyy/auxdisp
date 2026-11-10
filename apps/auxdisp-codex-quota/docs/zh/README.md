@@ -1,4 +1,4 @@
-# AuxDisp Codex 用量显示器
+# auxdisp-codex-quota
 
 [English version](../en/README.md)
 

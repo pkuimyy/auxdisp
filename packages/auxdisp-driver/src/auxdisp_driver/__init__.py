@@ -1,4 +1,4 @@
-"""Standalone drivers for small smart displays.
+"""auxdisp-driver: standalone drivers for small smart displays.
 
 The low-level ``LcdComm*`` classes intentionally retain the upstream method
 names and device-specific methods.  ``open_display`` is a small convenience

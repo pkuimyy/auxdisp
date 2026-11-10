@@ -1,10 +1,10 @@
-# AuxDisp Codex Quota Display
+# auxdisp-codex-quota
 
 [中文版](../zh/README.md)
 
 Rotate remaining quotas for multiple Codex accounts on a Turing USB 5.2-inch display: 1280×720 landscape, a fixed date and clock, ten-segment bars, and explicit error states.
 
-Requires Python 3.11+, `codex-auth` with accounts already configured, and an accessible USB device. The driver is installed from PyPI. This application is ready for initial acceptance testing.
+Requires Python 3.11+, `codex-auth` with accounts already configured, and an accessible USB device. `auxdisp-driver` is installed from PyPI. This application is ready for initial acceptance testing.
 
 ### Install and run
 

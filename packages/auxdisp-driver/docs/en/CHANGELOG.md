@@ -1,4 +1,4 @@
-# Changelog
+# auxdisp-driver — Changelog
 
 [中文版](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/CHANGELOG.md)
 

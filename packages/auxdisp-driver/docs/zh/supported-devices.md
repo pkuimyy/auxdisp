@@ -1,4 +1,4 @@
-# 支持的设备驱动
+# auxdisp-driver — 支持的设备驱动
 
 [English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md)
 

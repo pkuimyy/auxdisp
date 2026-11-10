@@ -1,5 +1,15 @@
 # Repository instructions
 
+## Project identifiers
+
+- Use the canonical project/distribution identifiers `auxdisp-driver` and
+  `auxdisp-codex-quota` in workflow filenames, workflow/job names, artifacts,
+  concurrency groups, thread names, and documentation titles or project references.
+  Do not use `driver`, `quota`, or `quota-app` as shortened project identifiers.
+- Python imports use the corresponding valid module names `auxdisp_driver` and
+  `auxdisp_codex_quota`. Keep generic protocol terms, internal variable names,
+  device APIs, and descriptive screen labels appropriate to their meaning.
+
 ## Monorepo boundaries
 
 - This repository is `auxdisp`; it contains independent projects under
@@ -14,11 +24,11 @@
   不再创建额外的项目级 uv 缓存目录。详见 `docs/zh/development.md` 和 `docs/en/development.md`。
 - Commit each project's `uv.lock`; never commit virtual environments,
   distribution artifacts, or build directories.
-- The Codex quota app must depend on a released `auxdisp-driver` package from
+- `auxdisp-codex-quota` must depend on a released `auxdisp-driver` package from
   PyPI. Do not use path, editable, workspace, or Git dependencies, and do not
   add the runtime dependency before a compatible driver release exists.
-- Do not implement quota business logic before the driver is accepted and
-  published.
+- Do not implement `auxdisp-codex-quota` business logic before `auxdisp-driver`
+  is accepted and published.
 
 ## Driver source and compatibility
 
@@ -38,12 +48,14 @@
 - Run uv commands in the selected project's directory, for example
   `uv lock --check`, `uv sync --locked`, `uv run pytest`, and `uv build
   --no-sources`.
-- Keep driver and app CI separate. Official app CI must resolve the driver from
+- Keep `auxdisp-driver` and `auxdisp-codex-quota` CI separate. Official
+  `auxdisp-codex-quota` CI must resolve `auxdisp-driver` from
   the package index with `--no-sources`.
 - PyPI publishing requires an explicit user-approved release step. Do not push
   Git remotes or publish packages unless explicitly requested.
-- Driver publishing uses `.github/workflows/driver-release.yml`, triggered only
-  by `auxdisp-driver-v<version>` tags matching the driver's `pyproject.toml`.
+- `auxdisp-driver` publishing uses
+  `.github/workflows/auxdisp-driver-release.yml`, triggered only by
+  `auxdisp-driver-v<version>` tags matching the project's `pyproject.toml`.
   Creating or pushing a release tag requires an explicit release request.
   The workflow uploads the same checked distributions to PyPI and GitHub Release;
   setup and release instructions are in `docs/zh/releases.md` and `docs/en/releases.md`.

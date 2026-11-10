@@ -1,4 +1,4 @@
-# 更新日志
+# auxdisp-driver — 更新日志
 
 [English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/CHANGELOG.md)
 
