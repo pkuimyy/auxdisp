@@ -27,6 +27,10 @@ Copy `config.example.toml` to `config.toml` once, without overwriting an existin
 
 Percentages display up to two decimal places. Filled segments use the actual remaining percentage, rounded upward to one segment per 10%; unknown data is distinct from zero. Durations 300 and 10080 identify 5-hour and 7-day quotas. Other durations remain in the model and are not misclassified.
 
+The compact TUI uses a fixed 1280×720 canvas. Account identity, plan, ACTIVE/INACTIVE, STALE, date, and time share one header line. Quota rows align the window, ten thin segments, percentage, and reset time in columns. Bars stay 21px high. The fixed footer shows the page index, READ ONLY, API status, and LAST OK, with natural whitespace below the resource row.
+
+Two font sizes are used: 44px for account names and percentages, and 24px for date/time, resource values, labels, status, and other information. The default is monospace, with a system CJK fallback at the same size for Chinese names; `render.font` accepts a font file. Long identities and status details are ellipsized within their reserved regions. CREDITS, RESET CARDS, and NEXT EXPIRY currently display `N/A`; resource fields are not connected, so these placeholders do not indicate balances or card counts.
+
 Inspect normalized data and stable `account_key` values with this read-only command. Its output contains account identities and should not be shared publicly:
 
 ```powershell

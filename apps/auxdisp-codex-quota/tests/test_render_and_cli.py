@@ -23,6 +23,8 @@ def test_clock_position_is_identical_for_normal_single_missing_and_error_pages(d
         images.append(image)
     store.failure("TIMEOUT")
     images.append(renderer.render(make_page(store.snapshot, "demo-dual", NOW, Settings())))
+    unlimited = Settings(unlimited={"demo-weekly": frozenset({300})})
+    images.append(renderer.render(make_page(store.snapshot, "demo-weekly", NOW, unlimited)))
     store.success((), NOW)
     images.append(renderer.render(make_page(store.snapshot, None, NOW, Settings())))
     clock = images[0].crop((970, 0, 1280, 145)).tobytes()
@@ -37,6 +39,9 @@ def test_unknown_is_not_zero_and_long_unicode_title_is_clipped(document):
     assert page.rows[0].state == "UNAVAILABLE" and page.rows[0].color == MUTED
     image = Renderer(Settings()).render(page)
     assert image.getpixel((1279, 200)) == tuple(int(BG[i:i+2], 16) for i in (1, 3, 5))
+    # Long identities must not overlap the fixed date/time region in the compact header.
+    short = Renderer(Settings()).render(replace(page, title="Short"))
+    assert image.crop((970, 0, 1280, 122)).tobytes() == short.crop((970, 0, 1280, 122)).tobytes()
     store.success((accounts[2],), NOW)
     page = make_page(store.snapshot, "demo-low", NOW, Settings())
     assert page.rows[1].state == "known" and page.rows[1].percent == "0%"

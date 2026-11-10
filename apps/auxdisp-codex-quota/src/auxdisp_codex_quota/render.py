@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import math
 from pathlib import Path
+from unicodedata import east_asian_width
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -11,10 +12,35 @@ from .config import Settings
 from .model import Snapshot
 
 
-BG = "#10151f"
-FG = "#eef2f7"
-MUTED = "#94a3b8"
-COLORS = ("#4ade80", "#facc15", "#fb923c", "#f87171")
+FONT_LARGE = 44
+FONT_MEDIUM = 24
+FONT_SMALL = FONT_MEDIUM
+
+BG = "#10151e"
+FG = "#e9edf4"
+MUTED = "#9aa9bd"
+DIM = "#67778d"
+RULE = "#344257"
+TRACK = "#2a3443"
+COLORS = ("#40db86", "#ffd018", "#ff9845", "#ff6672")
+
+CANVAS = (1280, 720)
+LEFT, RIGHT = 48, 1232
+HEADER_Y, HEADER_RULE_Y = 74, 122
+TITLE_WIDTH, PLAN_WIDTH, HEADER_GAP = 530, 96, 16
+DATE_RIGHT, TIME_RIGHT = 1133, RIGHT
+COLUMNS_Y = 178
+ROW_CENTERS = (244, 332)
+ROW_RULE_Y = 290
+BAR_X, BAR_WIDTH, BAR_HEIGHT, BAR_GAP = 222, 626, 21, 9
+PERCENT_RIGHT = 1036
+RESOURCES_RULE_Y, RESOURCES_Y = 392, 436
+CREDITS_VALUE_X, RESOURCE_SEPARATOR_X = 174, 250
+CARDS_LABEL_X, CARDS_VALUE_X = 284, 472
+EXPIRY_LABEL_RIGHT, EXPIRY_VALUE_X = 1136, 1152
+FOOTER_RULE_Y, FOOTER_Y = 648, 675
+COUNTER_WIDTH, META_X = 80, 140
+HEALTH_X, HEALTH_TEXT_X, REASON_X, HEALTH_RIGHT = 560, 576, 730, 856
 
 
 def timestamp(value):
@@ -105,13 +131,21 @@ class Renderer:
         self.settings = settings
         self.fonts = {}
 
-    def font(self, size, mono=False):
-        key = (size, mono)
+    def font(self, size, bold=False, cjk=False):
+        key = (size, bold, cjk)
         if key not in self.fonts:
-            candidates = ([self.settings.font] if self.settings.font else []) + (
-                ["C:/Windows/Fonts/consola.ttf", "DejaVuSansMono.ttf"] if mono else
-                ["C:/Windows/Fonts/msyh.ttc", "C:/Windows/Fonts/arial.ttf", "DejaVuSans.ttf"]
-            )
+            candidates = [self.settings.font] if self.settings.font else []
+            if cjk:
+                # Keep CJK account names readable at the same configured size.
+                candidates += [
+                    "C:/Windows/Fonts/msyhbd.ttc" if bold else "C:/Windows/Fonts/msyh.ttc",
+                    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc" if bold else
+                    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+                ]
+            candidates += [
+                "C:/Windows/Fonts/consolab.ttf" if bold else "C:/Windows/Fonts/consola.ttf",
+                "DejaVuSansMono-Bold.ttf" if bold else "DejaVuSansMono.ttf",
+            ]
             for candidate in candidates:
                 try:
                     self.fonts[key] = ImageFont.truetype(candidate, size)
@@ -123,46 +157,85 @@ class Renderer:
         return self.fonts[key]
 
     def render(self, page: Page) -> Image.Image:
-        image = Image.new("RGB", (1280, 720), BG)
+        image = Image.new("RGB", CANVAS, BG)
         draw = ImageDraw.Draw(image)
 
-        def text(x, y, value, size, color=FG, width=None, mono=False, anchor="la"):
+        def text(x, y, value, size=FONT_SMALL, color=FG, width=None, bold=False, anchor="lm"):
             value = " ".join(value.split())
-            font = self.font(size, mono)
+            font = self.font(size, bold, cjk=any(east_asian_width(char) in "WF" for char in value))
             if width is not None and draw.textlength(value, font=font) > width:
-                while value and draw.textlength(value + "…", font=font) > width:
+                ellipsis = "…"
+                if draw.textlength(ellipsis, font=font) > width:
+                    return 0
+                while value and draw.textlength(value + ellipsis, font=font) > width:
                     value = value[:-1]
-                value += "…"
+                value += ellipsis
             draw.text((x, y), value, font=font, fill=color, anchor=anchor)
+            return draw.textlength(value, font=font)
 
-        text(48, 36, "CODEX QUOTA", 28)
-        text(600, 47, f"{page.index} / {page.total}", 24, MUTED, mono=True, anchor="ma")
-        text(1232, 25, page.date, 24, MUTED, mono=True, anchor="ra")
-        text(1232, 56, page.clock, 64, mono=True, anchor="ra")
-        draw.line((48, 145, 1232, 145), fill="#334155", width=2)
-        if page.empty:
-            text(48, 295, page.empty, 48, MUTED)
-        else:
-            text(48, 177, page.title, 48, width=1010)
-            text(48, 245, page.plan, 24, MUTED, width=700)
-            if page.active:
-                text(1232, 190, "ACTIVE", 22, COLORS[0], anchor="ra")
+        title_width = text(LEFT, HEADER_Y, page.title or "CODEX QUOTA", FONT_LARGE,
+                           width=TITLE_WIDTH, bold=True)
+        if not page.empty:
+            plan_x = LEFT + title_width + HEADER_GAP
+            plan_width = text(plan_x, HEADER_Y, page.plan, color=MUTED, width=PLAN_WIDTH)
+            state_x = plan_x + plan_width + HEADER_GAP
+            text(state_x, HEADER_Y, "ACTIVE" if page.active else "INACTIVE",
+                 color=COLORS[0] if page.active else MUTED)
+            # Reserve the longer INACTIVE label even on active/error pages.
+            stale_x = state_x + draw.textlength("INACTIVE", font=self.font(FONT_SMALL)) + HEADER_GAP
             if page.stale:
-                text(1232, 245, "STALE", 22, COLORS[1], anchor="ra")
-            for row, y in zip(page.rows, (306, 468)):
-                text(48, y, row.label, 26, MUTED, mono=True)
-                text(1232, y, row.reset, 22, MUTED, anchor="ra")
+                text(stale_x, HEADER_Y, "STALE", color=COLORS[1])
+        text(DATE_RIGHT, HEADER_Y, page.date, FONT_MEDIUM, MUTED, anchor="rm")
+        text(TIME_RIGHT, HEADER_Y, page.clock, FONT_MEDIUM, anchor="rm")
+        draw.line((LEFT, HEADER_RULE_Y, RIGHT, HEADER_RULE_Y), fill=RULE)
+
+        text(LEFT, COLUMNS_Y, "WINDOW", color=DIM)
+        text(BAR_X, COLUMNS_Y, "REMAINING", color=DIM)
+        text(PERCENT_RIGHT, COLUMNS_Y, "LEFT", color=DIM, anchor="rm")
+        text(RIGHT, COLUMNS_Y, "RESET AT", color=DIM, anchor="rm")
+        if page.empty:
+            text(LEFT, ROW_CENTERS[0], page.empty, FONT_LARGE, MUTED, width=RIGHT - LEFT)
+        else:
+            draw.line((LEFT, ROW_RULE_Y, RIGHT, ROW_RULE_Y), fill=TRACK)
+            for row, y in zip(page.rows, ROW_CENTERS):
+                text(LEFT, y, row.label)
+                reset = row.reset.removeprefix("Reset ") if row.state == "known" else "—"
+                text(RIGHT, y, reset, color=MUTED, anchor="rm")
                 if row.state == "known":
                     for i in range(10):
-                        x = 48 + i * 90
-                        draw.rectangle((x, y + 49, x + 77, y + 107), fill=row.color if i < row.filled else "#283241")
-                    text(1232, y + 43, row.percent, 56, row.color, mono=True, anchor="ra")
+                        x = BAR_X + round(i * (BAR_WIDTH + BAR_GAP) / 10)
+                        end = BAR_X + round((i + 1) * (BAR_WIDTH + BAR_GAP) / 10) - BAR_GAP - 1
+                        top = y - BAR_HEIGHT // 2
+                        draw.rectangle((x, top, end, top + BAR_HEIGHT - 1),
+                                       fill=row.color if i < row.filled else TRACK)
+                    text(PERCENT_RIGHT, y, row.percent, FONT_LARGE, row.color, bold=True, anchor="rm")
                 else:
-                    text(48, y + 47, row.state, 40, MUTED)
-        draw.line((48, 635, 1232, 635), fill="#334155", width=2)
-        text(48, 651, page.status, 24, COLORS[3] if page.status == "API ERROR" else COLORS[0])
-        text(1232, 655, "LAST OK " + page.last_ok, 20, MUTED, anchor="ra")
-        text(48, 687, page.detail, 18, COLORS[1], width=1184)
+                    label = "DATA UNAVAILABLE" if row.state == "UNAVAILABLE" else row.state
+                    text(BAR_X, y, label, color=COLORS[0] if row.state == "NOT LIMITED" else MUTED,
+                         width=PERCENT_RIGHT - BAR_X)
+
+        # The current account model has no resource balances. Unknown is never zero.
+        draw.line((LEFT, RESOURCES_RULE_Y, RIGHT, RESOURCES_RULE_Y), fill=RULE)
+        text(LEFT, RESOURCES_Y, "CREDITS", color=MUTED)
+        text(CREDITS_VALUE_X, RESOURCES_Y, "N/A", FONT_MEDIUM)
+        draw.line((RESOURCE_SEPARATOR_X, RESOURCES_Y - 12, RESOURCE_SEPARATOR_X, RESOURCES_Y + 12), fill=RULE)
+        text(CARDS_LABEL_X, RESOURCES_Y, "RESET CARDS", color=MUTED)
+        text(CARDS_VALUE_X, RESOURCES_Y, "N/A", FONT_MEDIUM)
+        text(EXPIRY_LABEL_RIGHT, RESOURCES_Y, "NEXT EXPIRY", color=MUTED, anchor="rm")
+        text(EXPIRY_VALUE_X, RESOURCES_Y, "N/A", FONT_MEDIUM)
+
+        draw.line((LEFT, FOOTER_RULE_Y, RIGHT, FOOTER_RULE_Y), fill=RULE)
+        text(LEFT, FOOTER_Y, f"{page.index} / {page.total}", width=COUNTER_WIDTH)
+        text(META_X, FOOTER_Y, "READ ONLY", color=DIM, width=HEALTH_X - META_X - HEADER_GAP)
+        health_color = COLORS[3] if page.status == "API ERROR" else (COLORS[0] if page.status == "API OK" else MUTED)
+        draw.ellipse((HEALTH_X, FOOTER_Y - 4, HEALTH_X + 8, FOOTER_Y + 4), fill=health_color)
+        text(HEALTH_TEXT_X, FOOTER_Y, page.status, color=health_color)
+        reason = page.detail.removeprefix("STALE / ")
+        if reason == "STALE":
+            reason = ""
+        reason = reason.replace("ACCOUNT REFRESH FAILED / ", "").replace("ACCOUNT REFRESH FAILED", "REFRESH")
+        text(REASON_X, FOOTER_Y, reason, color=COLORS[1], width=HEALTH_RIGHT - REASON_X)
+        text(RIGHT, FOOTER_Y, "LAST OK " + page.last_ok, color=MUTED, anchor="rm")
         return image
 
 
