@@ -42,6 +42,11 @@
   the package index with `--no-sources`.
 - PyPI publishing requires an explicit user-approved release step. Do not push
   Git remotes or publish packages unless explicitly requested.
+- Driver publishing uses `.github/workflows/driver-release.yml`, triggered only
+  by `auxdisp-driver-v<version>` tags matching the driver's `pyproject.toml`.
+  Creating or pushing a release tag requires an explicit release request.
+  The workflow uploads the same checked distributions to PyPI and GitHub Release;
+  setup and release instructions are in `docs/zh/releases.md` and `docs/en/releases.md`.
 - Run each Git command in its own tool call and in the relevant working
   directory. Routine queries, staging, commits, fetch/pull, and normal push are
   allowed; deletion, force push, amend, and history rewriting require explicit

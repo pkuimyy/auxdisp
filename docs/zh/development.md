@@ -43,3 +43,5 @@ uv build --no-sources
 ## 应用开发门槛
 
 用量应用须等待驱动完成验收并发布到 PyPI 后再开始业务开发。届时使用普通有界版本依赖，不使用本地路径、editable、Workspace 或 Git 依赖。详见[架构](architecture.md)。
+
+[驱动发布与 tag 约定](releases.md)

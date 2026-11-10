@@ -22,4 +22,4 @@ The app directory is a metadata, docs, and lockfile placeholder only. Its runtim
 
 ### CI and publishing
 
-Driver CI tests and builds the driver independently. The placeholder app CI tests only the app skeleton; it does not simulate an official PyPI integration test before the driver exists on PyPI. Publishing workflows are deferred until the respective release stages and require manual approval.
+Driver CI tests and builds the driver independently. The placeholder app CI tests only the app skeleton; it does not simulate an official PyPI integration test before the driver exists on PyPI. The driver release workflow requires an explicitly pushed `auxdisp-driver-v<version>` tag, uploads to PyPI, then publishes the same artifacts on GitHub Release. See [Driver releases](releases.md) for setup and operation. App publishing remains deferred until its release stage.

@@ -1,0 +1,112 @@
+name: Driver Release
+
+on:
+  push:
+    tags:
+      - "auxdisp-driver-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: driver-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validate, test, and build driver
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    defaults:
+      run:
+        working-directory: packages/auxdisp-driver
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: packages/auxdisp-driver/uv.lock
+      - run: uv sync --locked --all-groups --no-sources
+      - name: Require the driver tag to match package metadata
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: uv run --no-sync python scripts/check_release.py $env:RELEASE_TAG
+      - run: uv run --no-sync ruff check src tests examples scripts
+      - run: uv run --no-sync pytest
+      - run: uv build --no-sources
+      - run: uv run --no-sync python scripts/check_wheel.py
+      - run: uv tool run --from twine twine check --strict dist/*.whl dist/*.tar.gz
+      - name: Verify the built wheel installs independently
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          uv venv .venv-wheel --python 3.13
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $wheels = @(Get-ChildItem dist/*.whl)
+          if ($wheels.Count -ne 1) { throw "Expected exactly one driver wheel" }
+          $wheel = $wheels[0].FullName
+          uv pip install --python .venv-wheel/Scripts/python.exe $wheel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv-wheel/Scripts/python.exe -c "import os, pathlib, auxdisp_driver; from importlib.metadata import version; from auxdisp_driver.display import DRIVERS; assert '.venv-wheel' in str(pathlib.Path(auxdisp_driver.__file__).resolve()); assert len(DRIVERS) == 8; assert version('auxdisp-driver') == os.environ['RELEASE_VERSION']"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auxdisp-driver-distributions
+          path: |
+            packages/auxdisp-driver/dist/*.whl
+            packages/auxdisp-driver/dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-pypi:
+    name: Publish driver to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/auxdisp-driver/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: auxdisp-driver-distributions
+          path: dist
+      - name: Upload the checked distributions using Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+  github-release:
+    name: Publish the same distributions to GitHub Release
+    needs: [build, publish-pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: auxdisp-driver-distributions
+          path: dist
+      - name: Create the driver release and attach wheel and source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Standalone auxdisp-driver %s.\n\nInstall: `pip install auxdisp-driver==%s`\n\n[Changelog](https://github.com/%s/blob/%s/packages/auxdisp-driver/docs/en/CHANGELOG.md)\n' \
+            "$RELEASE_VERSION" "$RELEASE_VERSION" "$GH_REPO" "$RELEASE_TAG" > release-notes.md
+          gh release create "$RELEASE_TAG" dist/*.whl dist/*.tar.gz \
+            --verify-tag --title "auxdisp-driver $RELEASE_VERSION" \
+            --notes-file release-notes.md --prerelease="$PRERELEASE"

@@ -43,3 +43,5 @@ If access to `.lock` in the default user cache is denied, first check that `UV_C
 ## App development gate
 
 Quota business development starts after driver acceptance and publication on PyPI. At that point, use an ordinary bounded version dependency, with no local path, editable, Workspace, or Git dependency. See [Architecture](architecture.md).
+
+[Driver publishing and release tags](releases.md)
