@@ -4,7 +4,7 @@
 
 An independent Python driver library for small auxiliary displays. Supports Rev A/B/C/D, Turing USB, WeAct A/B, and a local simulator, preserving upstream `LcdComm*` APIs and device-specific methods.
 
-Requires Python 3.9 or newer. The package is at an early stage and has not been published to PyPI; run from source or build a wheel to install it. Windows USB devices require a compatible interface driver; Linux users need device access permissions.
+Requires Python 3.9 or newer. Version 0.1.0 is available on PyPI: install with `pip install auxdisp-driver`. The project remains at an early stage. Windows USB devices require a compatible interface driver; Linux users need device access permissions.
 
 ### Usage example
 

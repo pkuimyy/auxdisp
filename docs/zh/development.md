@@ -34,7 +34,7 @@ uv run pytest
 uv build --no-sources
 ```
 
-应用占位项目使用自己的目录与锁文件；检查锁文件和同步依赖时分别使用 `uv lock --check --no-sources` 和 `uv sync --locked --all-groups --no-sources`。共享缓存不会建立两个项目之间的源码依赖，也不会启用 uv Workspace。
+用量应用使用自己的目录与锁文件；检查锁文件和同步依赖时分别使用 `uv lock --check --no-sources` 和 `uv sync --locked --all-groups --no-sources`。共享缓存不会建立两个项目之间的源码依赖，也不会启用 uv Workspace。
 
 `.artifacts/` 和各项目的 `.venv` 已被 Git 忽略；缓存、虚拟环境和构建产物不提交，`uv.lock` 继续提交。
 
@@ -42,6 +42,6 @@ uv build --no-sources
 
 ## 应用开发门槛
 
-用量应用须等待驱动完成验收并发布到 PyPI 后再开始业务开发。届时使用普通有界版本依赖，不使用本地路径、editable、Workspace 或 Git 依赖。详见[架构](architecture.md)。
+驱动 0.1.0 已发布，用量应用已启用普通有界版本依赖。继续从 PyPI 安装驱动，不使用本地路径、editable、Workspace 或 Git 依赖。详见[架构](architecture.md)。
 
 [驱动发布与 tag 约定](releases.md)

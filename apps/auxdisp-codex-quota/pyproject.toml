@@ -5,20 +5,29 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "auxdisp-codex-quota"
 version = "0.1.0"
-description = "Engineering placeholder for the AuxDisp Codex quota display application"
+description = "Multi-account Codex quota display for Turing USB 5.2-inch screens"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
-dependencies = []
+dependencies = [
+    "auxdisp-driver>=0.1.0,<0.2.0",
+    "pillow>=11.1.0",
+]
 classifiers = [
-  "Development Status :: 1 - Planning",
+  "Development Status :: 3 - Alpha",
   "Operating System :: Microsoft :: Windows",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
+
+[project.scripts]
+auxdisp-codex-quota = "auxdisp_codex_quota.cli:main"
+
+[tool.setuptools.package-data]
+auxdisp_codex_quota = ["data/*.json"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -28,6 +37,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.11"]

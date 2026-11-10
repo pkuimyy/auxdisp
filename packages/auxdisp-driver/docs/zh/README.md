@@ -4,7 +4,7 @@
 
 独立的 Python 辅助显示屏驱动库，支持 Rev A/B/C/D、Turing USB、WeAct A/B 和本地模拟器，保留上游 `LcdComm*` API 与设备专用方法。
 
-要求 Python 3.9 或更新版本。目前处于早期阶段，尚未发布到 PyPI；可从源码运行或构建 wheel 安装。Windows USB 设备需要兼容的接口驱动，Linux 用户需要相应的设备访问权限。
+要求 Python 3.9 或更新版本。0.1.0 已发布到 PyPI，可使用 `pip install auxdisp-driver` 安装；项目仍处于早期阶段。Windows USB 设备需要兼容的接口驱动，Linux 用户需要相应的设备访问权限。
 
 ### 使用示例
 

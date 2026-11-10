@@ -13,7 +13,7 @@
 uv sync --locked
 ```
 
-目前尚无首个 PyPI 版本。发布后，应用可以通过常规包管理器从 PyPI 安装 `auxdisp-driver`。发布前需要独立安装时，可按实机测试流程构建并安装 wheel。
+0.1.0 已发布到 PyPI，可使用 `pip install auxdisp-driver` 安装。源码开发仍使用上述独立 uv 项目。
 
 本包要求 Python 3.9 或更新版本，并依赖 Pillow、NumPy、PySerial、PyUSB 和 PyCryptodome。这些依赖覆盖完整驱动集所需的串口、USB、图像转换及 Turing USB 加密协议。
 
@@ -89,4 +89,4 @@ except DisplayError as exc:
 uv build --no-sources
 ```
 
-wheel 包含驱动源码和许可证，不会在运行时依赖任何参考仓库。本项目尚未上传到 PyPI。
+wheel 包含驱动源码和许可证，不会在运行时依赖任何参考仓库。0.1.0 已发布到 PyPI。

@@ -1,0 +1,24 @@
+[collector]
+executable = "codex-auth"
+refresh_seconds = 60
+timeout_seconds = 20
+
+[rotation]
+seconds = 15
+
+[display]
+orientation = "landscape"
+brightness = 30
+reconnect_seconds = 5
+
+[render]
+thresholds = [75, 50, 25]
+font = ""
+
+[logging]
+level = "INFO"
+
+# Replace this key with the exact stable account_key printed by --inspect.
+# This is an explicit policy, never inferred from an email address.
+[accounts."replace-with-stable-outlook-account-key"]
+unlimited_windows = [300]

@@ -12,7 +12,7 @@ To run from source, enter `packages/auxdisp-driver`. See [Local development](htt
 uv sync --locked
 ```
 
-The first PyPI release has not happened yet. After release, consumer applications can install `auxdisp-driver` from PyPI with their normal package installer.
+Version 0.1.0 is published on PyPI. Install it with `pip install auxdisp-driver`; the commands above are for source development.
 
 The package requires Python 3.9 or newer, Pillow, NumPy, PySerial, PyUSB, and PyCryptodome. Dependencies are declared for the full driver set, including serial, USB, image conversion, and encrypted Turing USB protocols.
 
@@ -88,4 +88,4 @@ except DisplayError as exc:
 uv build --no-sources
 ```
 
-The wheel contains the package source and license and has no runtime path dependency on either reference checkout. This project has not been uploaded to PyPI.
+The wheel contains the package source and license and has no runtime path dependency on either reference checkout. Version 0.1.0 is published on PyPI.

@@ -17,10 +17,10 @@ Git 仓库：auxdisp
 
 `packages/auxdisp-driver/src/auxdisp_driver/` 包含提取后的 `LcdComm*` 协议类，以及轻量的设备发现和打开封装。协议代码尽量保持上游实现。驱动包不包含 Codex 或系统监控业务逻辑。所有平台都通过 `libusb-package` 提供 libusb 运行时；Windows USB 设备仍需绑定兼容的 USB 接口驱动，Linux 用户仍需有设备访问权限。
 
-### 用量应用的生命周期
+### 用量应用
 
-应用目录目前只是元数据、文档和锁文件占位项目。驱动尚未发布，因此应用暂不启用对 `auxdisp-driver` 的运行时依赖。驱动通过设备验收并发布到 PyPI 后，应用可以声明有界的包索引版本要求，更新自己的 `uv.lock`，并运行 `uv lock --no-sources` 和 `uv sync --locked --no-sources`。
+驱动 0.1.0 已完成基础实机验证并发布到 PyPI。用量应用以 `auxdisp-driver>=0.1.0,<0.2.0` 声明普通包索引依赖，独立维护锁文件，不导入驱动源码目录。应用已实现只读采集、不可变历史快照、账户轮播、Pillow 渲染和独立 USB 重连线程，详见[应用使用与架构](../../apps/auxdisp-codex-quota/docs/zh/usage.md)。
 
 ### CI 与发布
 
-驱动 CI 独立测试并构建驱动。应用占位项目的 CI 只检查应用骨架，不会在驱动尚未发布时伪造 PyPI 集成测试。驱动的发布工作流仅由显式推送 `auxdisp-driver-v<版本>` tag 触发，上传 PyPI 后将同一份制品发布到 GitHub Release。配置与操作见[驱动发布](releases.md)。应用发布流程仍待其达到发布阶段后配置。
+驱动 CI 独立测试并构建驱动。应用 CI 从 PyPI 安装驱动，独立测试、构建，并验证应用 wheel 安装与离线预览。驱动的发布工作流仅由显式推送 `auxdisp-driver-v<版本>` tag 触发，上传 PyPI 后将同一份制品发布到 GitHub Release。配置与操作见[驱动发布](releases.md)。应用发布流程仍待其达到发布阶段后配置。

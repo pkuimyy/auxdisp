@@ -1,4 +1,4 @@
-name: Quota Placeholder CI
+name: Quota App CI
 
 on:
   push:
@@ -25,7 +25,7 @@ permissions:
   contents: read
 
 jobs:
-  placeholder:
+  test-build-install:
     runs-on: windows-latest
     defaults:
       run:
@@ -40,6 +40,28 @@ jobs:
           enable-cache: true
           cache-dependency-glob: apps/auxdisp-codex-quota/uv.lock
       - run: uv sync --locked --all-groups --no-sources
-      - run: uv run ruff check src tests
-      - run: uv run pytest
+      - run: uv run --locked --no-sources ruff check src tests
+      - run: uv run --locked --no-sources pytest
+      - name: Render synthetic previews without USB or account access
+        run: |
+          uv run --locked --no-sources auxdisp-codex-quota --preview previews/dual.png
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run --locked --no-sources auxdisp-codex-quota --preview previews/single.png --account-index 1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv run --locked --no-sources auxdisp-codex-quota --preview previews/error.png --simulate-error
       - run: uv build --no-sources
+      - name: Install app wheel with driver resolved from PyPI
+        run: |
+          uv venv .venv-wheel --python 3.13
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $wheel = Get-ChildItem dist/*.whl | Select-Object -First 1 -ExpandProperty FullName
+          uv pip install --python .venv-wheel/Scripts/python.exe --index-url https://pypi.org/simple $wheel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv-wheel/Scripts/python.exe -c "from importlib.metadata import distribution; import auxdisp_codex_quota, auxdisp_driver; from pathlib import Path; assert '.venv-wheel' in str(Path(auxdisp_codex_quota.__file__).resolve()); assert distribution('auxdisp-driver').read_text('direct_url.json') is None"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv-wheel/Scripts/auxdisp-codex-quota.exe --preview previews/installed-wheel.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: quota-app-previews
+          path: apps/auxdisp-codex-quota/previews/*.png
+          if-no-files-found: error

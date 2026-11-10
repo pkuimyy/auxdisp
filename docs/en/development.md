@@ -34,7 +34,7 @@ uv run pytest
 uv build --no-sources
 ```
 
-The placeholder app uses its own directory and lockfile. Check its lock with `uv lock --check --no-sources` and sync with `uv sync --locked --all-groups --no-sources`. Sharing a cache does not create a source dependency between the projects or enable a uv Workspace.
+The quota app uses its own directory and lockfile. Check its lock with `uv lock --check --no-sources` and sync with `uv sync --locked --all-groups --no-sources`. Sharing a cache does not create a source dependency between the projects or enable a uv Workspace.
 
 `.artifacts/` and each project's `.venv` are already ignored by Git. Do not commit caches, virtual environments, or build outputs; continue committing `uv.lock`.
 
@@ -42,6 +42,6 @@ If access to `.lock` in the default user cache is denied, first check that `UV_C
 
 ## App development gate
 
-Quota business development starts after driver acceptance and publication on PyPI. At that point, use an ordinary bounded version dependency, with no local path, editable, Workspace, or Git dependency. See [Architecture](architecture.md).
+Driver 0.1.0 is published and the quota app now uses an ordinary bounded index dependency, with no local path, editable, Workspace, or Git dependency. See [Architecture](architecture.md).
 
 [Driver publishing and release tags](releases.md)

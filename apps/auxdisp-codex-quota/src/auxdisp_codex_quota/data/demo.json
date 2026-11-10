@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "command": "list",
+  "active_account_key": "demo-dual",
+  "accounts": [
+    {
+      "account_key": "demo-dual", "email": "work@example.com", "alias": "Work account", "plan": "pro", "active": true,
+      "usage": {
+        "source": "api", "updated_at": 1794312000,
+        "primary": {"used_percent": 8, "window_minutes": 300, "resets_at": 1794322800},
+        "secondary": {"used_percent": 45, "window_minutes": 10080, "resets_at": 1794560400},
+        "refresh": {"status": "ok"}
+      }
+    },
+    {
+      "account_key": "demo-weekly", "email": "weekly@example.com", "alias": "Weekly account", "plan": "plus", "active": false,
+      "usage": {
+        "source": "api", "updated_at": 1794312000,
+        "primary": {"used_percent": 8, "window_minutes": 10080, "resets_at": 1794560400},
+        "secondary": null, "refresh": {"status": "ok"}
+      }
+    },
+    {
+      "account_key": "demo-low", "email": "personal@example.com", "alias": "Personal account", "plan": "plus", "active": false,
+      "usage": {
+        "source": "api", "updated_at": 1794312000,
+        "primary": {"used_percent": 95, "window_minutes": 300, "resets_at": 1794322800},
+        "secondary": {"used_percent": 100, "window_minutes": 10080, "resets_at": 1794560400},
+        "refresh": {"status": "ok"}
+      }
+    }
+  ]
+}

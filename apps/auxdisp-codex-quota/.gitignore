@@ -1,0 +1,4 @@
+# Personal account policies and generated previews are local-only.
+config.toml
+preview*.png
+previews/

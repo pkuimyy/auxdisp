@@ -4,5 +4,7 @@
 
 ### 0.1.0
 
-- Created an engineering placeholder; no application functionality is present.
-- No PyPI release is authorized or planned in this stage.
+- Depend on the released auxdisp-driver from PyPI.
+- Add read-only collection, duration-based quotas, historical snapshots, and account rotation.
+- Add a fixed clock, ten-segment bars, offline previews, and USB reconnection.
+- Add synthetic-data, failure-recovery, and installation tests.
