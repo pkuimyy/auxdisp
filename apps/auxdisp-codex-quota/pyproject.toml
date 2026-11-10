@@ -30,6 +30,8 @@ auxdisp-codex-quota = "auxdisp_codex_quota.cli:main"
 Repository = "https://github.com/pkuimyy/auxdisp"
 Documentation = "https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/en/README.md"
 Issues = "https://github.com/pkuimyy/auxdisp/issues"
+Changelog = "https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/en/CHANGELOG.md"
+Releases = "https://github.com/pkuimyy/auxdisp/releases"
 
 [tool.setuptools.package-data]
 auxdisp_codex_quota = ["data/*.json"]

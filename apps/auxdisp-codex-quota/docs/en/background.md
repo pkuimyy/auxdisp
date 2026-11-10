@@ -1,6 +1,6 @@
 # auxdisp-codex-quota — Windows background operation
 
-[中文版](../zh/background.md) | [Configuration and development](usage.md)
+[中文版](../zh/background.md) | [Configuration and previews](usage.md)
 
 ## Install and start
 
@@ -24,6 +24,18 @@ Repeated `start` retains the running instance. It checks the package version, ta
 auxdisp-codex-quota start --config C:\Users\Me\auxdisp-config.toml
 auxdisp-codex-quota restart --config C:\Users\Me\auxdisp-config.toml
 ```
+
+## Update the package
+
+Run in the original installation environment, retaining existing configuration:
+
+```powershell
+auxdisp-codex-quota stop
+pip install --upgrade auxdisp-codex-quota
+auxdisp-codex-quota start
+```
+
+An upgrade does not restart a running process; use `restart` if already upgraded while running. Configuration changes also need `restart`. Repeat `--config` on the final `start` or `restart` for custom files. See [troubleshooting](troubleshooting.md).
 
 ## Configuration, logs, and status
 

@@ -1,16 +1,17 @@
-# AuxDisp
+# AuxDisp 中文文档
 
-[English version](../en/README.md)
+[项目首页与快速开始](../../README.md) | [English](../en/README.md)
 
-AuxDisp 为小型辅助显示屏提供 Python 驱动，支持通过 USB 或串口发送图像、设置亮度与显示方向。
+AuxDisp 提供 USB / 串口辅助显示驱动和 Codex 多账户额度显示应用。首次使用请先阅读项目首页，按设备与用途选择安装路径。
 
-- **auxdisp-driver**：包含 Rev A/B/C/D、Turing USB、WeAct A/B 和本地模拟器，保留设备专用 API。
-- **[auxdisp-codex-quota](../../apps/auxdisp-codex-quota/README.md)**：首版已实现，支持多账户轮播、额度展示与 USB 重连，正在实机验收。
-
-`auxdisp-driver` 0.1.0 已发布到 PyPI，仍处于早期阶段。驱动代码的覆盖范围与实机兼容性请参阅[支持设备](../../packages/auxdisp-driver/docs/zh/supported-devices.md)。
-
-### 文档
-
-- [auxdisp-driver：驱动库与使用示例](../../packages/auxdisp-driver/README.md)
-- [项目架构](architecture.md)
-- [本地开发与环境问题排查](development.md)
+| 你想做什么 | 文档 |
+|---|---|
+| 安装、启动或卸载 auxdisp-codex-quota | [应用入门](../../apps/auxdisp-codex-quota/README.md) |
+| 调整亮度、轮播、字体或额度策略 | [应用配置](../../apps/auxdisp-codex-quota/docs/zh/usage.md) |
+| 管理后台运行、查看日志与状态 | [Windows 后台运行](../../apps/auxdisp-codex-quota/docs/zh/background.md) |
+| 排查连接或数据异常 | [应用排障](../../apps/auxdisp-codex-quota/docs/zh/troubleshooting.md) |
+| 用 Python 绘制屏幕 | [auxdisp-driver 入门](../../packages/auxdisp-driver/README.md) |
+| 确认设备与平台限制 | [支持设备与验收范围](../../packages/auxdisp-driver/docs/zh/supported-devices.md) |
+| 使用设备发现与专用方法 | [驱动指南](../../packages/auxdisp-driver/docs/zh/usage.md) |
+| 参与开发 | [本地开发](development.md) · [架构](architecture.md) |
+| 维护发布 | [auxdisp-driver 发布](releases.md) · [auxdisp-codex-quota 发布](../../apps/auxdisp-codex-quota/docs/zh/releases.md) |

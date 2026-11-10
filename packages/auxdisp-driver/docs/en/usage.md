@@ -6,17 +6,15 @@ An independent Python package containing the display drivers extracted from [`tu
 
 ### Install
 
-To run from source, enter `packages/auxdisp-driver`. See [Local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md) for environment setup, then sync dependencies:
+Requires Python 3.9+. End users can install the published 0.1.0 package from PyPI:
 
 ```powershell
-uv sync --locked
+pip install auxdisp-driver
 ```
 
-Version 0.1.0 is published on PyPI. Install it with `pip install auxdisp-driver`; the commands above are for source development.
+Pillow, NumPy, PySerial, PyUSB, PyCryptodome, and `libusb-package` are installed as dependencies. The latter supplies a user-space libusb library, not a Windows device interface driver or Linux access permissions. A system libusb may be used when needed. See [supported devices](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md) for platform and hardware acceptance scope.
 
-The package requires Python 3.9 or newer, Pillow, NumPy, PySerial, PyUSB, and PyCryptodome. Dependencies are declared for the full driver set, including serial, USB, image conversion, and encrypted Turing USB protocols.
-
-This package installs `libusb-package` on all platforms as the libusb runtime and uses it to discover USB devices. Windows devices still need a compatible USB interface driver; the wheel does not install or replace that system driver. Linux users must still have permission to access USB devices; if the bundled backend does not fit the system environment, a system libusb installation can be used. macOS users may also use a system libusb installation.
+For source development, see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md) and sync the separate environment in `packages/auxdisp-driver`.
 
 ### Use a display
 

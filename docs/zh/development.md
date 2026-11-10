@@ -51,6 +51,10 @@ uv build --no-sources
 
 若默认用户缓存目录出现 `.lock` 拒绝访问，先检查 `UV_CACHE_DIR` 是否已指向上述共享目录。若 Python 构建子进程仍在临时目录中报 `PermissionError: [WinError 5]`，应检查终端或执行沙箱的文件访问权限；在具备相应权限的本地终端重试，受控执行环境则按其授权流程处理。更换缓存目录不能单独解决沙箱权限问题，无需为此更改依赖或锁文件。
 
+## auxdisp-codex-quota 当前界面基线
+
+当前默认每 60 秒采集、每 15 秒轮播，名称和百分比为 44px，其余信息为 24px。旧设计中的 10 秒轮播和三级字号与当前实现不同；文档以代码和已确认的界面为准，不因文档整理而改变业务行为。CREDITS、RESET CARDS、NEXT EXPIRY 仍为 `N/A`，不应描述为真实资源数据。
+
 ## auxdisp-codex-quota 开发门槛
 
 `auxdisp-driver` 0.1.0 已发布，`auxdisp-codex-quota` 已启用普通有界版本依赖。继续从 PyPI 安装 `auxdisp-driver`，不使用本地路径、editable、Workspace 或 Git 依赖。详见[架构](architecture.md)。

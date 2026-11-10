@@ -6,7 +6,7 @@
 Git repository: auxdisp
 ├── packages/auxdisp-driver     independent PyPI distribution
 │       └── USB / serial display protocols
-└── apps/auxdisp-codex-quota    independent future PyPI application
+└── apps/auxdisp-codex-quota    independent PyPI application
         └── depends on auxdisp-driver's published PyPI release
 ```
 
@@ -18,7 +18,7 @@ The folders share Git history but not Python resolution, lock files, virtual env
 
 ### auxdisp-codex-quota
 
-`auxdisp-driver` 0.1.0 has passed basic hardware checks and is published on PyPI. `auxdisp-codex-quota` declares `auxdisp-driver>=0.1.0,<0.2.0` as an ordinary index dependency, with its own lockfile and no driver source imports. It implements read-only collection, immutable historical snapshots, rotation, Pillow rendering, and an independent reconnecting USB worker. See [auxdisp-codex-quota usage and architecture](../../apps/auxdisp-codex-quota/docs/en/usage.md).
+`auxdisp-driver` and `auxdisp-codex-quota` 0.1.0 are published on PyPI; see [supported devices](../../packages/auxdisp-driver/docs/en/supported-devices.md) for hardware verification scope. `auxdisp-codex-quota` declares `auxdisp-driver>=0.1.0,<0.2.0` as an ordinary index dependency, with its own lockfile and no driver source imports. It implements read-only collection, immutable historical snapshots, rotation, Pillow rendering, and an independent reconnecting USB worker. See [auxdisp-codex-quota configuration and previews](../../apps/auxdisp-codex-quota/docs/en/usage.md).
 
 `auxdisp-codex-quota` supports current-user Windows scheduled tasks and CLI lifecycle management, using the installed `pythonw.exe`, an instance mutex, and a graceful-stop Event. Configuration and rotating logs live in the user's data directory. See [Windows background operation](../../apps/auxdisp-codex-quota/docs/en/background.md). Real task registration, logon recovery, and USB unplug/replug still require system/hardware acceptance.
 

@@ -1,6 +1,6 @@
 # auxdisp-codex-quota — Windows 后台运行
 
-[English version](../en/background.md) | [配置与开发](usage.md)
+[English version](../en/background.md) | [配置与预览](usage.md)
 
 ## 安装与启动
 
@@ -24,6 +24,18 @@ auxdisp-codex-quota restart
 auxdisp-codex-quota start --config C:\Users\Me\auxdisp-config.toml
 auxdisp-codex-quota restart --config C:\Users\Me\auxdisp-config.toml
 ```
+
+## 更新包
+
+在原安装环境中执行，保留已有配置：
+
+```powershell
+auxdisp-codex-quota stop
+pip install --upgrade auxdisp-codex-quota
+auxdisp-codex-quota start
+```
+
+升级本身不会重启进程；如果已经在运行中升级，执行 `restart`。修改配置也需要 `restart`。使用自定义文件时，在最后的 `start` 或 `restart` 重复提供 `--config`。排障见 [故障排查](troubleshooting.md).
 
 ## 配置、日志与状态
 

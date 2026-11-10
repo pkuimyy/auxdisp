@@ -7,17 +7,15 @@
 
 ### 安装
 
-从源码运行时，先进入 `packages/auxdisp-driver` 目录；开发环境配置见[本地开发文档](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。同步依赖：
+要求 Python 3.9+，普通用户可直接从 PyPI 安装 0.1.0：
 
 ```powershell
-uv sync --locked
+pip install auxdisp-driver
 ```
 
-0.1.0 已发布到 PyPI，可使用 `pip install auxdisp-driver` 安装。源码开发仍使用上述独立 uv 项目。
+依赖 Pillow、NumPy、PySerial、PyUSB、PyCryptodome 和 `libusb-package` 会自动安装。后者提供用户态 libusb 库，不替代 Windows 设备接口驱动或 Linux 设备权限；必要时可使用系统 libusb。平台与硬件验收范围见[支持设备](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)。
 
-本包要求 Python 3.9 或更新版本，并依赖 Pillow、NumPy、PySerial、PyUSB 和 PyCryptodome。这些依赖覆盖完整驱动集所需的串口、USB、图像转换及 Turing USB 加密协议。
-
-本包会在所有平台安装 `libusb-package` 作为 libusb 运行时，并通过它查找 USB 设备。Windows 设备仍需绑定兼容的 USB 接口驱动；wheel 不会安装或替换该系统驱动。Linux 用户仍需确保当前账户有 USB 设备访问权限；若打包的后端不适用于系统环境，可使用系统 libusb。macOS 用户也可使用系统安装的 libusb。
+源码开发另见[本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)，在 `packages/auxdisp-driver` 同步独立环境。
 
 ### 驱动显示屏
 
