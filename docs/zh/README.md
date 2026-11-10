@@ -2,19 +2,15 @@
 
 [English version](../en/README.md)
 
+AuxDisp 为小型辅助显示屏提供 Python 驱动，支持通过 USB 或串口发送图像、设置亮度与显示方向。
 
-AuxDisp 是一个 Git 单体仓库，用于维护彼此独立的 Python 发行包：用于驱动小型辅助屏的设备驱动库，以及未来的 Codex 用量显示应用。
+- **显示驱动库**：包含 Rev A/B/C/D、Turing USB、WeAct A/B 和本地模拟器，保留设备专用 API。
+- **Codex 用量应用**：规划中，当前尚无可用的应用功能。
 
-| 项目 | 路径 | 发行包 | 状态 |
-|---|---|---|---|
-| 驱动库 | [`packages/auxdisp-driver`](../../packages/auxdisp-driver/README.md) | `auxdisp-driver` | 已完成提取；尚未发布到 PyPI |
-| Codex 用量应用 | [`apps/auxdisp-codex-quota`](../../apps/auxdisp-codex-quota/README.md) | `auxdisp-codex-quota` | 工程占位项目，尚无用量业务代码 |
+驱动库处于早期阶段，尚未发布到 PyPI。驱动代码的覆盖范围与实机兼容性请参阅[支持设备](../../packages/auxdisp-driver/docs/zh/supported-devices.md)。
 
-每个项目都是独立的 uv 项目，各自拥有 `pyproject.toml`、`uv.lock` 和 `.venv`。仓库刻意不使用 uv Workspace。Git 仓库只负责协作，不会在发行包之间建立源码依赖。
+### 文档
 
-### 项目文档
-
-- [架构](architecture.md)
-- [驱动支持的设备](../../packages/auxdisp-driver/docs/zh/supported-devices.md)
-
-参考仓库位于本 Git 历史之外，仅供只读分析。上游监控应用及有意未纳入的 `res/` 目录不属于 AuxDisp。
+- [驱动库与使用示例](../../packages/auxdisp-driver/README.md)
+- [项目架构](architecture.md)
+- [本地开发与环境问题排查](development.md)

@@ -2,8 +2,6 @@
 
 [中文版](../zh/README.md)
 
-This directory is an engineering placeholder only. It contains no Codex account handling, quota polling, screen rendering, or other application business logic.
+A planned application for displaying Codex quota information on an auxiliary screen. It is still in the planning stage; no application features are available yet.
 
-The driver has not yet passed the first physical-device acceptance and has no PyPI release. Therefore this project currently has no runtime driver dependency. After an accepted driver version is available from PyPI, declare a bounded ordinary package dependency in `pyproject.toml`, for example `auxdisp-driver>=0.1.0,<0.2.0`, then update this project's independent lock with `uv lock --no-sources`. Do not add a local path, editable, workspace, or Git dependency.
-
-This package should not be developed or released before that gate is met.
+Development starts after driver acceptance and publication. See [Architecture](../../../../docs/en/architecture.md) for project status and development conventions.

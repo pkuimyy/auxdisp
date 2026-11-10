@@ -1,6 +1,6 @@
 # 支持的设备驱动
 
-[English version](../en/supported-devices.md)
+[English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md)
 
 
 以下协议族从上游提交 `866e5ba999de0ed9373a46b6f2a714ef8322cfce` 保留到代码中。“已包含”表示驱动代码已打包，不代表设备已经过实机测试。

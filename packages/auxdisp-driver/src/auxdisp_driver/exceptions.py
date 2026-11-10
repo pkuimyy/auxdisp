@@ -1,5 +1,5 @@
-"""Exceptions raised by the package-level convenience API."""
+"""Exceptions raised by display discovery, connections, and USB transfers."""
 
 
 class DisplayError(RuntimeError):
-    """A display could not be discovered, opened, or initialized."""
+    """Display discovery, connection, initialization, or USB transfer failed."""

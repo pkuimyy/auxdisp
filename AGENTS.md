@@ -7,6 +7,11 @@
 - Do not add `[tool.uv.workspace]` or `tool.uv.sources` at the root or in a
   child project.
 - Keep a separate `pyproject.toml`, `uv.lock`, and `.venv` in each project.
+- For local development, set `UV_CACHE_DIR` to the absolute path of the
+  repository's `.artifacts/uv-cache` and reuse it across subprojects. Keep each
+  project's `.venv` separate; do not create additional per-project uv caches.
+  本地开发共用仓库根目录的 `.artifacts/uv-cache`；各项目保留独立 `.venv`，
+  不再创建额外的项目级 uv 缓存目录。详见 `docs/zh/development.md` 和 `docs/en/development.md`。
 - Commit each project's `uv.lock`; never commit virtual environments,
   distribution artifacts, or build directories.
 - The Codex quota app must depend on a released `auxdisp-driver` package from

@@ -1,6 +1,6 @@
 # Supported device drivers
 
-[中文版](../zh/supported-devices.md)
+[中文版](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)
 
 These are code-preserved protocol families from upstream commit `866e5ba999de0ed9373a46b6f2a714ef8322cfce`. “Included” means the driver code is packaged; it does not mean each device was tested with hardware.
 

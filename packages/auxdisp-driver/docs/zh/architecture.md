@@ -1,6 +1,6 @@
 # 架构与 API
 
-[English version](../en/architecture.md)
+[English version](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/architecture.md)
 
 
 ### 分层
@@ -15,7 +15,7 @@
 
 提取的 `LcdComm*` 类仍负责协议实现。便捷封装 `Display` 会转发未知属性，因此调用方仍可使用设备专用方法。可以调用 `open_display("turing_usb")`、`open_display("rev_a", com_port="COM4")`，也可以直接实例化底层类。构造器保留上游连接行为；`InitializeComm()` 执行协议初始化。
 
-`discover_devices()` 会探测串口标识和已知的 Turing USB 产品 ID，但不会占用设备、设置 USB 配置或初始化通信。共用适配器 ID 的串口设备可能对应多个驱动候选项。请根据硬件型号明确选择协议版本。
+`discover_devices()` 默认仅枚举串口标识和已知的 Turing USB 产品 ID，不打开串口、唤醒设备、设置 USB 配置或初始化通信；休眠的 Rev C 设备也可作为候选项返回。`discover_devices(wake_devices=True)` 可显式启用 Rev C 的上游串口唤醒流程。通过 `open_display("rev_c", com_port="AUTO")` 打开设备时仍保留原有唤醒行为。共用适配器 ID 的串口设备可能对应多个驱动候选项。请根据硬件型号明确选择协议版本。
 
 ### 资源生命周期
 
@@ -28,3 +28,7 @@
 公开的 `show()` 接收 Pillow 图像，并转发给原始 `DisplayPILImage`。像素转换、分块、裁剪和设备方向仍由各上游协议实现。`LcdComm` 保留 `DisplayText`、进度条和图表等常用绘图 API；缺少 Roboto 默认字体时会使用 Pillow 自带字体。自定义字体和背景文件由调用方提供。
 
 模拟器会写入 `screencap.png`，并使用上游默认的本地 Web 端口 5678。请在不同工作目录运行多个模拟器实例；当前上游模拟器的截图和端口设置是进程级共享的。
+
+### 异常处理
+
+串口重试耗尽会抛出 `DisplayError`，不会终止调用方进程。Turing USB 的配置访问、请求写入或应答读取失败，以及写入不完整或应答为空，也会抛出 `DisplayError`；底层 USB 异常保留在 `__cause__` 中。`Display.show()`、亮度设置和初始化会向调用方传播这些错误。读取有效应答后的清理读取允许以超时结束。原有文件上传辅助方法保留其旧格式重试和布尔返回约定，失败返回 `False`。

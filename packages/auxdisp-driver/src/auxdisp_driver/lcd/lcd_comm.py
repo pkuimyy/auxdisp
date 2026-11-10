@@ -20,10 +20,8 @@
 
 import copy
 import math
-import os
 import platform
 import queue
-import sys
 import threading
 import time
 from abc import ABC, abstractmethod
@@ -34,6 +32,7 @@ import serial
 from PIL import Image, ImageDraw, ImageFont
 
 from auxdisp_driver.log import logger
+from auxdisp_driver.exceptions import DisplayError
 from auxdisp_driver.lcd.color import Color, parse_color
 
 
@@ -106,6 +105,7 @@ class LcdComm(ABC):
     def openSerial(self):
         # self.com_port is kept as configured ("AUTO" or a port name): on AUTO the port is
         # detected again at every attempt, since it can change while the screen resets.
+        last_error = None
         for attempt in range(1, SERIAL_OPEN_ATTEMPTS + 1):
             com_port = self.com_port
             if com_port == 'AUTO':
@@ -123,17 +123,15 @@ class LcdComm(ABC):
                 self.lcd_serial = serial.Serial(com_port, 115200, timeout=1, rtscts=True)
                 return
             except Exception as e:
+                last_error = e
                 logger.warning(
                     f"Cannot open COM port {com_port}: {e} - retrying ({attempt}/{SERIAL_OPEN_ATTEMPTS})")
                 time.sleep(SERIAL_OPEN_RETRY_DELAY)
 
-        logger.error(
-            f"Cannot open COM port after {SERIAL_OPEN_ATTEMPTS} attempts. If the screen is connected, run "
-            f"Configuration again and select the COM port manually")
-        try:
-            sys.exit(0)
-        except:
-            os._exit(0)
+        raise DisplayError(
+            f"Cannot open COM port {self.com_port!r} after {SERIAL_OPEN_ATTEMPTS} attempts; "
+            "check the connection and select the COM port explicitly if needed"
+        ) from last_error
 
     def closeSerial(self):
         if self.lcd_serial is not None:

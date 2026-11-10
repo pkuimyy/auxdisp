@@ -136,15 +136,22 @@ class LcdCommRevC(LcdComm):
         self.closeSerial()
 
     @staticmethod
-    def auto_detect_com_port() -> Optional[str]:
+    def auto_detect_com_port(*, wake: bool = True) -> Optional[str]:
+        """Find a port, optionally retaining the upstream device wake-up behavior."""
+        com_ports = comports()
+        if not wake:
+            awake_port = LcdCommRevC._get_awake_com_port(com_ports)
+            if awake_port:
+                return awake_port
         # If sleeping device is detected through serial number or vid/pid, try to wake it up
-        for com_port in comports():
-            if com_port.serial_number in ('USB7INCH', 'CT21INCH', 'CT88INCH'):
-                LcdCommRevC._wake_up_device(com_port)
-            elif com_port.vid == 0x1a86 and com_port.pid == 0xca21:
+        for com_port in com_ports:
+            if (com_port.serial_number in ('USB7INCH', 'CT21INCH', 'CT88INCH')
+                    or (com_port.vid == 0x1a86 and com_port.pid == 0xca21)):
+                if not wake:
+                    return com_port.device
                 LcdCommRevC._wake_up_device(com_port)
 
-        return LcdCommRevC._get_awake_com_port(comports())
+        return LcdCommRevC._get_awake_com_port(comports()) if wake else None
 
     @staticmethod
     def _get_awake_com_port(com_ports) -> Optional[str]:

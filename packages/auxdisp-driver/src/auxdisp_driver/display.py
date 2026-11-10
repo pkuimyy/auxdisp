@@ -81,14 +81,21 @@ class Display:
         return getattr(self.device, name)
 
 
-def discover_devices(*, include_simulated: bool = False) -> List[DisplayInfo]:
-    """List connection candidates without opening serial ports or configuring USB."""
+def discover_devices(*, include_simulated: bool = False, wake_devices: bool = False) -> List[DisplayInfo]:
+    """List candidates without opening ports or configuring USB by default.
+
+    ``wake_devices=True`` opts into the upstream Rev C serial wake-up sequence.
+    Opening a Rev C device with ``com_port="AUTO"`` also retains that sequence.
+    """
     found: List[DisplayInfo] = []
     serial_drivers = ("rev_a", "rev_b", "rev_c", "rev_d", "weact_a", "weact_b")
     for key in serial_drivers:
         driver = DRIVERS[key]
         try:
-            port = driver.auto_detect_com_port()
+            if key == "rev_c":
+                port = driver.auto_detect_com_port(wake=wake_devices)
+            else:
+                port = driver.auto_detect_com_port()
         except Exception as exc:
             raise DisplayError(f"Could not probe serial ports for {key}: {exc}") from exc
         if port:

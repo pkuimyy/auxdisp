@@ -36,6 +36,7 @@ from PIL import Image
 
 from auxdisp_driver.lcd.lcd_comm import Orientation, LcdComm
 from auxdisp_driver.log import logger
+from auxdisp_driver.exceptions import DisplayError
 from auxdisp_driver.usb_backend import find_usb_devices
 
 VENDOR_ID = 0x1cbe
@@ -505,29 +506,33 @@ def read_flush(ep_in, max_attempts=5):
 
 
 def write_to_device(dev, data, timeout=2000):
-    cfg = dev.get_active_configuration()
-    intf = usb.util.find_descriptor(cfg, bInterfaceNumber=0)
-    if intf is None:
-        raise RuntimeError("USB interface 0 not found")
-    ep_out = usb.util.find_descriptor(intf, custom_match=lambda e: usb.util.endpoint_direction(
-        e.bEndpointAddress) == usb.util.ENDPOINT_OUT)
-    ep_in = usb.util.find_descriptor(intf, custom_match=lambda e: usb.util.endpoint_direction(
-        e.bEndpointAddress) == usb.util.ENDPOINT_IN)
-    assert ep_out is not None and ep_in is not None, "Could not find USB endpoints"
-
+    """Send one request and read its response; propagate transport failures."""
+    stage = "configuration"
     try:
-        ep_out.write(data, timeout)
-    except usb.core.USBError as e:
-        print("USB write error:", e)
-        return None
+        cfg = dev.get_active_configuration()
+        intf = usb.util.find_descriptor(cfg, bInterfaceNumber=0)
+        if intf is None:
+            raise DisplayError("USB interface 0 not found")
+        ep_out = usb.util.find_descriptor(intf, custom_match=lambda e: usb.util.endpoint_direction(
+            e.bEndpointAddress) == usb.util.ENDPOINT_OUT)
+        ep_in = usb.util.find_descriptor(intf, custom_match=lambda e: usb.util.endpoint_direction(
+            e.bEndpointAddress) == usb.util.ENDPOINT_IN)
+        if ep_out is None or ep_in is None:
+            raise DisplayError("Could not find USB endpoints")
 
-    try:
+        stage = "write"
+        written = ep_out.write(data, timeout)
+        if written != len(data):
+            raise DisplayError(f"Incomplete USB write: {written} of {len(data)} bytes")
+
+        stage = "read"
         response = ep_in.read(512, timeout)
         read_flush(ep_in)
+        if not len(response):
+            raise DisplayError("USB read returned an empty response")
         return bytes(response)
     except usb.core.USBError as e:
-        print("USB read error:", e)
-        return None
+        raise DisplayError(f"USB {stage} failed: {e}") from e
 
 
 def delay_sync(dev):
@@ -897,7 +902,11 @@ def _write_file_command(dev, file_path: str) -> bool:
                 if is_last:
                     cmd_packet[16] = 1
 
-                response = write_to_device(dev, encrypt_command_packet(cmd_packet) + data_chunk)
+                try:
+                    response = write_to_device(dev, encrypt_command_packet(cmd_packet) + data_chunk)
+                except DisplayError:
+                    # Preserve the upstream legacy retry on a failed first transfer.
+                    response = None
 
                 # Fallback: legacy layout uses [8..11]=chunk_len only
                 if response is None or (not _resp_ok(response)):
