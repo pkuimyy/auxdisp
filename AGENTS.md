@@ -59,6 +59,12 @@
   Creating or pushing a release tag requires an explicit release request.
   The workflow uploads the same checked distributions to PyPI and GitHub Release;
   setup and release instructions are in `docs/zh/releases.md` and `docs/en/releases.md`.
+- `auxdisp-codex-quota` publishing uses
+  `.github/workflows/auxdisp-codex-quota-release.yml`, triggered only by matching
+  `auxdisp-codex-quota-v<version>` tags. It independently tests and builds the app,
+  resolves `auxdisp-driver` from PyPI, and publishes the same checked distributions
+  to PyPI and GitHub Release. Release instructions are in the app's bilingual
+  `docs/zh/releases.md` and `docs/en/releases.md`; tags require an explicit release request.
 - Run each Git command in its own tool call and in the relevant working
   directory. Routine queries, staging, commits, fetch/pull, and normal push are
   allowed; deletion, force push, amend, and history rewriting require explicit

@@ -11,7 +11,7 @@ Each subproject maintains its own `pyproject.toml`, `uv.lock`, and `.venv`. The 
 | Project/distribution name | `auxdisp-driver` | `auxdisp-codex-quota` |
 | Python import name | `auxdisp_driver` | `auxdisp_codex_quota` |
 | CI workflow file | `auxdisp-driver-ci.yml` | `auxdisp-codex-quota-ci.yml` |
-| Release workflow file | `auxdisp-driver-release.yml` | Not configured yet |
+| Release workflow file | `auxdisp-driver-release.yml` | `auxdisp-codex-quota-release.yml` |
 
 Use full identifiers in workflow/job names, artifacts, concurrency groups, thread names, and documentation project references, rather than `driver`, `quota`, or `quota-app`. Python modules use underscores. Generic protocol terms, internal variables, device APIs, and screen labels retain names appropriate to their meaning.
 

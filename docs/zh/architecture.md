@@ -25,4 +25,4 @@ Git 仓库：auxdisp
 
 ### CI 与发布
 
-`auxdisp-driver` CI 独立测试并构建 `auxdisp-driver`。`auxdisp-codex-quota` CI 从 PyPI 安装 `auxdisp-driver`，独立测试、构建，并验证 `auxdisp-codex-quota` wheel 安装与离线预览。`auxdisp-driver` 的发布工作流仅由显式推送 `auxdisp-driver-v<版本>` tag 触发，上传 PyPI 后将同一份制品发布到 GitHub Release。配置与操作见[auxdisp-driver 发布](releases.md)。`auxdisp-codex-quota` 发布流程仍待其达到发布阶段后配置。
+`auxdisp-driver` CI 独立测试并构建 `auxdisp-driver`。`auxdisp-codex-quota` CI 从 PyPI 安装 `auxdisp-driver`，独立测试、构建，并验证 `auxdisp-codex-quota` wheel 安装与离线预览。`auxdisp-driver` 的发布工作流仅由显式推送 `auxdisp-driver-v<版本>` tag 触发，上传 PyPI 后将同一份制品发布到 GitHub Release。配置与操作见[auxdisp-driver 发布](releases.md)。`auxdisp-codex-quota` 通过独立的 `auxdisp-codex-quota-release.yml` 发布，由 `auxdisp-codex-quota-v<版本>` tag 触发；详见[应用发布说明](../../apps/auxdisp-codex-quota/docs/zh/releases.md)。

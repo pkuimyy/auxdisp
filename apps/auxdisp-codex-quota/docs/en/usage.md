@@ -89,6 +89,6 @@ uv run --locked --no-sources pytest
 uv build --no-sources
 ```
 
-`auxdisp-codex-quota` CI is independent and installs the released `auxdisp-driver` from PyPI, with no monorepo path dependency. Tests and previews use synthetic accounts and fake devices. See [Local development](../../../../docs/en/development.md) for per-project environments and the shared cache.
+`auxdisp-codex-quota` CI is independent and installs the released `auxdisp-driver` from PyPI, with no monorepo path dependency. Tests and previews use synthetic accounts and fake devices. See [Local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md) for per-project environments and the shared cache.
 
 Only one Turing USB 5.2-inch display in landscape is supported. Reconnection retries the latest frame; OS USB calls may briefly block the display worker. A 75-second integration run does not establish long-duration stability. Do not add GUI, account management, animation, or other screen models before initial acceptance.

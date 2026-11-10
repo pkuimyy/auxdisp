@@ -4,7 +4,7 @@
 
 ## 安装与启动
 
-发行包安装后的用户接口如下；本实现不自动发布 PyPI 新版本。请先独立安装并配置当前 Windows 用户的 `codex-auth`，准备可访问的 Turing USB 5.2 英寸设备。
+发行包安装后的用户接口如下。请先独立安装并配置当前 Windows 用户的 `codex-auth`，准备可访问的 Turing USB 5.2 英寸设备。
 
 ```powershell
 pip install auxdisp-codex-quota

@@ -2,7 +2,7 @@
 
 [中文版](../zh/CHANGELOG.md)
 
-### Unreleased
+### 0.1.0
 
 - Add current-user Windows scheduled tasks and start/stop/status/restart/run/uninstall-service commands.
 - Add instance mutexes, graceful-stop events, collection cancellation, bounded crash retries, and rotating user logs.
@@ -11,8 +11,6 @@
 - Use 44px for account names and percentages and 24px for all other text, with monospace defaults, CJK fallback, and clipping.
 - Keep the page index, READ ONLY, API status, and LAST OK in the footer; remove collection/rotation interval hints.
 - Add an inline resource row with explicit `N/A` placeholders, preserving collection, rotation, and USB behavior.
-
-### 0.1.0
 
 - Depend on the released auxdisp-driver from PyPI.
 - Add read-only collection, duration-based quotas, historical snapshots, and account rotation.

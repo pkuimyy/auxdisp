@@ -4,7 +4,7 @@
 
 ## Install and start
 
-The following interface applies to an installed distribution; implementing it does not publish a new PyPI release. Install and configure `codex-auth` for the current Windows user and prepare an accessible Turing USB 5.2-inch device.
+The following interface applies to an installed distribution. Install and configure `codex-auth` for the current Windows user and prepare an accessible Turing USB 5.2-inch device.
 
 ```powershell
 pip install auxdisp-codex-quota

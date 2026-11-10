@@ -1,0 +1,129 @@
+name: auxdisp-codex-quota Release
+
+on:
+  push:
+    tags:
+      - "auxdisp-codex-quota-v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auxdisp-codex-quota-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Validate, test, and build auxdisp-codex-quota
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    defaults:
+      run:
+        working-directory: apps/auxdisp-codex-quota
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.7"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: apps/auxdisp-codex-quota/uv.lock
+      - run: uv sync --locked --all-groups --no-sources
+      - name: Require the auxdisp-codex-quota tag to match package metadata
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: uv run --no-sync python scripts/check_release.py $env:RELEASE_TAG
+      - run: uv run --no-sync ruff check src tests scripts
+      - run: uv run --no-sync pytest -W error
+      - run: uv build --no-sources
+      - run: uv run --no-sync python scripts/check_distributions.py
+      - run: uv tool run --from twine twine check --strict dist/*.whl dist/*.tar.gz
+      - name: Verify auxdisp-codex-quota installs with auxdisp-driver from PyPI
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          uv venv .venv-wheel --python 3.13
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $wheels = @(Get-ChildItem dist/*.whl)
+          if ($wheels.Count -ne 1) { throw "Expected exactly one auxdisp-codex-quota wheel" }
+          uv pip install --python .venv-wheel/Scripts/python.exe --index-url https://pypi.org/simple $wheels[0].FullName
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv-wheel/Scripts/python.exe -I -c "import os; from pathlib import Path; from importlib.metadata import distribution, version; import auxdisp_codex_quota; assert '.venv-wheel' in str(Path(auxdisp_codex_quota.__file__).resolve()); assert version('auxdisp-codex-quota') == os.environ['RELEASE_VERSION']; assert distribution('auxdisp-driver').read_text('direct_url.json') is None"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:LOCALAPPDATA = Join-Path $PWD.Path '.tmp-run/release-profile'
+          ./.venv-wheel/Scripts/auxdisp-codex-quota.exe --preview previews/installed-wheel.png
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./.venv-wheel/Scripts/auxdisp-codex-quota.exe run --demo --headless previews/installed-wheel-live.png --duration 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auxdisp-codex-quota-distributions
+          path: |
+            apps/auxdisp-codex-quota/dist/*.whl
+            apps/auxdisp-codex-quota/dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-pypi:
+    name: Publish auxdisp-codex-quota to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/auxdisp-codex-quota/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: auxdisp-codex-quota-distributions
+          path: dist
+      - name: Upload the checked auxdisp-codex-quota distributions using Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+  github-release:
+    name: Publish auxdisp-codex-quota distributions to GitHub Release
+    needs: [build, publish-pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: auxdisp-codex-quota-distributions
+          path: dist
+      - name: Create the auxdisp-codex-quota release with the checked distributions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > release-notes.md <<EOF
+          auxdisp-codex-quota $RELEASE_VERSION
+
+          Install: \`pip install auxdisp-codex-quota==$RELEASE_VERSION\`
+
+          - Read-only multi-account Codex quota collection, historical snapshots, and account rotation.
+          - Compact 1280x720 TUI, offline previews, and USB reconnection.
+          - Current-user Windows background tasks with start/stop/status/restart/run/uninstall-service commands.
+          - Per-user configuration, rotating logs, single-instance protection, and graceful shutdown.
+
+          Validation includes automated tests and offline wheel installation checks. Real Task Scheduler registration, logon/resume behavior, and physical USB acceptance remain pending. Resource balances currently display N/A.
+
+          [Changelog](https://github.com/$GH_REPO/blob/$RELEASE_TAG/apps/auxdisp-codex-quota/docs/en/CHANGELOG.md)
+          EOF
+          gh release create "$RELEASE_TAG" dist/*.whl dist/*.tar.gz \
+            --verify-tag --title "auxdisp-codex-quota $RELEASE_VERSION" \
+            --notes-file release-notes.md --prerelease="$PRERELEASE"

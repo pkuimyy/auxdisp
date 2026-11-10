@@ -11,13 +11,14 @@ Requires Python 3.11+, `codex-auth` with accounts already configured, and an acc
 Installed distributions support a current-user Windows background task:
 
 ```powershell
+pip install auxdisp-codex-quota
 auxdisp-codex-quota start
 auxdisp-codex-quota status
 auxdisp-codex-quota stop
 auxdisp-codex-quota restart
 ```
 
-Installation does not register a task; the first `start` does. Configuration defaults to `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`. See [Windows background operation and removal](background.md). This implementation does not publish a new PyPI release.
+Installation does not register a task; the first `start` does. Configuration defaults to `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`. See [Windows background operation and removal](background.md). Real scheduled-task and USB behavior still requires system/hardware acceptance.
 
 For source development, from `apps/auxdisp-codex-quota`:
 

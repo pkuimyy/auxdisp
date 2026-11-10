@@ -10,6 +10,7 @@ on:
       - ".gitignore"
       - "LICENSE"
       - ".github/workflows/auxdisp-codex-quota-ci.yml"
+      - ".github/workflows/auxdisp-codex-quota-release.yml"
   pull_request:
     paths:
       - "apps/auxdisp-codex-quota/**"
@@ -19,6 +20,7 @@ on:
       - ".gitignore"
       - "LICENSE"
       - ".github/workflows/auxdisp-codex-quota-ci.yml"
+      - ".github/workflows/auxdisp-codex-quota-release.yml"
   workflow_dispatch:
 
 permissions:
@@ -41,7 +43,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: apps/auxdisp-codex-quota/uv.lock
       - run: uv sync --locked --all-groups --no-sources
-      - run: uv run --locked --no-sources ruff check src tests
+      - run: uv run --locked --no-sources ruff check src tests scripts
       - run: uv run --locked --no-sources pytest
       - name: Render auxdisp-codex-quota synthetic previews without USB or account access
         run: |
@@ -51,6 +53,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           uv run --locked --no-sources auxdisp-codex-quota --preview previews/error.png --simulate-error
       - run: uv build --no-sources
+      - run: uv run --locked --no-sources python scripts/check_distributions.py
       - name: Install auxdisp-codex-quota wheel with auxdisp-driver resolved from PyPI
         run: |
           uv venv .venv-wheel --python 3.13

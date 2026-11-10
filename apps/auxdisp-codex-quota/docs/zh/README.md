@@ -11,13 +11,14 @@
 发行包安装后，可使用当前用户的 Windows 计划任务常驻运行：
 
 ```powershell
+pip install auxdisp-codex-quota
 auxdisp-codex-quota start
 auxdisp-codex-quota status
 auxdisp-codex-quota stop
 auxdisp-codex-quota restart
 ```
 
-安装包本身不会创建任务。首次 `start` 才注册任务；配置默认读取 `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`。详见 [Windows 后台运行与卸载](background.md)。本次实现不代表已发布新的 PyPI 版本。
+安装包本身不会创建任务。首次 `start` 才注册任务；配置默认读取 `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`。详见 [Windows 后台运行与卸载](background.md)。真实计划任务和 USB 功能仍需系统/实机验收。
 
 源码开发在 `apps/auxdisp-codex-quota` 目录执行：
 

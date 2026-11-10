@@ -11,7 +11,7 @@
 | 项目名、发行包名 | `auxdisp-driver` | `auxdisp-codex-quota` |
 | Python 导入名 | `auxdisp_driver` | `auxdisp_codex_quota` |
 | CI 工作流文件 | `auxdisp-driver-ci.yml` | `auxdisp-codex-quota-ci.yml` |
-| 发布工作流文件 | `auxdisp-driver-release.yml` | 尚未配置 |
+| 发布工作流文件 | `auxdisp-driver-release.yml` | `auxdisp-codex-quota-release.yml` |
 
 工作流名称、任务显示名称、artifact、并发组、线程名称和文档中的项目标识使用完整名称，不使用 `driver`、`quota` 或 `quota-app` 简写。Python 模块名使用下划线；协议术语、内部变量、设备 API 和屏幕标签按其实际含义命名。
 
