@@ -11,9 +11,13 @@ from pathlib import Path
 from .collector import CollectionWorker, Collector
 from .config import load_settings, positive
 from .display import DisplayAdapter, DisplayWorker, FileAdapter
+from .host import run_host
 from .model import AccountStore, DataError, parse_accounts
 from .render import Renderer, make_page, save_preview
 from .runtime import Runtime
+from .paths import select_config
+from .service import ServiceController
+from .win32 import ServiceError
 
 
 class FixtureCollector:
@@ -32,7 +36,10 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="auxdisp-codex-quota", description="Codex account quotas on a Turing USB 5.2-inch display",
     )
-    parser.add_argument("--config", type=Path, help="settings TOML; defaults to ./config.toml if present")
+    parser.add_argument("command", nargs="?", default="run",
+                        choices=("start", "stop", "status", "restart", "run", "uninstall-service"),
+                        help="foreground run (default) or current-user Windows background task management")
+    parser.add_argument("--config", type=Path, help="settings TOML; defaults to the current user's app data directory")
     source = parser.add_mutually_exclusive_group()
     source.add_argument("--demo", action="store_true", help="use bundled synthetic accounts instead of codex-auth")
     source.add_argument("--fixture", type=Path, help="use a schema-1 list document instead of codex-auth")
@@ -44,6 +51,22 @@ def main(argv=None):
     parser.add_argument("--headless", type=Path, help="write the latest page to PNG instead of accessing USB")
     parser.add_argument("--duration", type=float, help="stop a test run after this many seconds")
     args = parser.parse_args(argv)
+    if args.command != "run":
+        if (args.demo or args.fixture or args.preview or args.inspect or args.headless
+                or args.duration is not None or args.simulate_error or args.account_index):
+            parser.error("Preview, collection, and output options require run")
+        if args.config and args.command not in ("start", "restart"):
+            parser.error("--config applies to start, restart, or run")
+        try:
+            result = ServiceController().execute(args.command, args.config)
+            print(json.dumps(result, ensure_ascii=True, indent=2))
+            if result.get("stop_result", {}).get("forced"):
+                logging.warning("Managed task was forcibly stopped after the graceful-stop timeout")
+            return 0
+        except (ServiceError, DataError, ValueError, OSError) as exc:
+            # Task/collector errors are deliberately safe codes, never raw subprocess output.
+            logging.error("Background management failed: %s", exc)
+            return 1
     if args.simulate_error and not args.preview:
         parser.error("--simulate-error requires --preview")
     if args.headless and (args.preview or args.inspect):
@@ -53,8 +76,8 @@ def main(argv=None):
             positive(args.duration, "duration")
         except ValueError as exc:
             parser.error(str(exc))
-    config = args.config or (Path("config.toml") if Path("config.toml").is_file() else None)
     try:
+        config = select_config(args.config)
         settings = load_settings(config)
     except (ValueError, OSError) as exc:
         parser.error(f"Configuration error: {exc}")
@@ -85,11 +108,14 @@ def main(argv=None):
         ))
         runtime = Runtime(settings, CollectionWorker(collector), Renderer(settings), output)
         try:
-            runtime.run(args.duration)
+            run_host(runtime, args.duration)
         except KeyboardInterrupt:
             logging.info("Stopped; collection and display resources released")
         return 0
     except DataError as exc:
+        logging.error("%s", exc)
+        return 1
+    except ServiceError as exc:
         logging.error("%s", exc)
         return 1
     except (ValueError, OSError):

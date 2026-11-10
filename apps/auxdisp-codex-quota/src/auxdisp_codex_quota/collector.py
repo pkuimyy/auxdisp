@@ -146,3 +146,5 @@ class CollectionWorker:
         self.collector.close()
         if self.thread:
             self.thread.join(timeout=10)
+            if self.thread.is_alive():
+                raise TimeoutError("Collection worker did not finish cancellation")

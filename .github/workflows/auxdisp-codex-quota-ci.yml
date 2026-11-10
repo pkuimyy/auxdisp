@@ -61,6 +61,9 @@ jobs:
           ./.venv-wheel/Scripts/python.exe -c "from importlib.metadata import distribution; import auxdisp_codex_quota, auxdisp_driver; from pathlib import Path; assert '.venv-wheel' in str(Path(auxdisp_codex_quota.__file__).resolve()); assert distribution('auxdisp-driver').read_text('direct_url.json') is None"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./.venv-wheel/Scripts/auxdisp-codex-quota.exe --preview previews/installed-wheel.png
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:LOCALAPPDATA = Join-Path $PWD.Path '.tmp-run/installed-wheel-profile'
+          ./.venv-wheel/Scripts/auxdisp-codex-quota.exe run --demo --headless previews/installed-wheel-live.png --duration 2
       - uses: actions/upload-artifact@v4
         with:
           name: auxdisp-codex-quota-previews

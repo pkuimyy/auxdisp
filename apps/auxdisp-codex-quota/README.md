@@ -8,12 +8,22 @@
 
 ### 安装与运行
 
-在本目录执行：
+发行包安装后，可使用当前用户的 Windows 计划任务常驻运行：
+
+```powershell
+auxdisp-codex-quota start
+auxdisp-codex-quota status
+auxdisp-codex-quota stop
+auxdisp-codex-quota restart
+```
+
+安装包本身不会创建任务。首次 `start` 才注册任务；配置默认读取 `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`。详见 [Windows 后台运行与卸载](docs/zh/background.md)。本次实现不代表已发布新的 PyPI 版本。
+
+源码开发在本目录执行：
 
 ```powershell
 uv sync --locked --no-sources
-Copy-Item config.example.toml config.toml
-uv run --locked --no-sources auxdisp-codex-quota
+uv run --locked --no-sources auxdisp-codex-quota run --config config.example.toml
 ```
 
 默认每 60 秒采集、每 15 秒切换账户，屏幕亮度为 30%。退出使用 Ctrl+C。应用只调用 `codex-auth list --api --json`，不会切换账户或使用重置额度。

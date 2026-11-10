@@ -4,6 +4,9 @@
 
 ### Unreleased
 
+- Add current-user Windows scheduled tasks and start/stop/status/restart/run/uninstall-service commands.
+- Add instance mutexes, graceful-stop events, collection cancellation, bounded crash retries, and rotating user logs.
+- Default configuration to the current user's data directory; development-directory files require explicit `--config`.
 - Adopt the compact TUI v3 header, column-aligned thin quota bars, and fixed footer.
 - Use 44px for account names and percentages and 24px for all other text, with monospace defaults, CJK fallback, and clipping.
 - Keep the page index, READ ONLY, API status, and LAST OK in the footer; remove collection/rotation interval hints.

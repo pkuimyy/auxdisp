@@ -10,7 +10,7 @@ Install and configure `codex-auth` independently. On Windows, npm installations 
 
 ## Local configuration
 
-Copy `config.example.toml` to `config.toml` once, without overwriting an existing configuration. The current directory's `config.toml` is loaded automatically, or use `--config <path>`. Git ignores this file; it holds display settings and stable account IDs, not tokens.
+Configuration priority is explicit `--config <path>`, `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`, then built-in defaults. The working directory is no longer searched automatically. For development, use `--config config.example.toml` or explicitly select a copied local configuration, without overwriting existing settings. Configuration holds display settings and stable account IDs, not tokens. See [Windows background operation](background.md) for lifecycle commands, logs, and removal.
 
 | Setting | Default |
 |---|---|
@@ -71,6 +71,10 @@ uv run --locked --no-sources auxdisp-codex-quota --demo --headless previews/late
 | `display.py` | Independent USB worker, latest-frame slot, reconnect and duplicate suppression |
 | `runtime.py` | Collection cadence, rotation, minute clock, and visible-page deduplication |
 | `cli.py` | Normal startup, previews, inspection, and bounded runs |
+| `paths.py` | Per-user configuration, log, and state paths after installation |
+| `service.py` / `scheduler.py` | Idempotent CLI lifecycle and current-user scheduled tasks |
+| `win32.py` / `host.py` | Instance mutex, stop Event, health heartbeat, and rotating logs |
+| `_background.py` | Private installed-package entry point for the scheduled task |
 
 Collection, scheduling, and USB output are independent. The clock remains visible without accounts. Global failures preserve all history; per-account failures preserve that account's history and show `STALE`. Request success time is stored separately from `usage.updated_at`. Reordering retains the current stable ID; removal prefers the next surviving account in the previous order.
 

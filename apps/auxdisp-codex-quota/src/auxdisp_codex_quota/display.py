@@ -103,6 +103,11 @@ class DisplayWorker:
             self._desired = (image.copy(), signature)
         self._wake.set()
 
+    @property
+    def usb_connected(self):
+        # Last observed transport state; headless output has no USB connection.
+        return self.adapter.device is not None if isinstance(self.adapter, DisplayAdapter) else None
+
     def _run(self):
         try:
             while not self._stop.is_set():
@@ -121,6 +126,6 @@ class DisplayWorker:
     def close(self):
         self._stop.set()
         self._wake.set()
-        self.thread.join(timeout=10)
-        if self.thread.is_alive():
-            LOG.warning("Waiting for USB operation to finish before cleanup")
+        # The controller's stop deadline handles a genuinely wedged OS USB call.
+        # Keep the instance lock until the adapter has actually released resources.
+        self.thread.join()

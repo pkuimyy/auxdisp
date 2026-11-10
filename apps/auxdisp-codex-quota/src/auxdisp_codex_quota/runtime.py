@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import logging
+from threading import Event
 import time
 
 from .model import AccountStore, PageController
@@ -47,12 +48,15 @@ class Runtime:
             self.last_page = page
             self.rendered_frames += 1
 
-    def run(self, duration=None):
+    def run(self, duration=None, stop_event=None, on_tick=None):
+        stop = stop_event if stop_event is not None else Event()
         started = time.monotonic()
         try:
-            while duration is None or time.monotonic() - started < duration:
+            while not stop.is_set() and (duration is None or time.monotonic() - started < duration):
                 self.step(time.monotonic(), datetime.now().astimezone())
-                time.sleep(0.1)
+                if on_tick is not None:
+                    on_tick(self)
+                stop.wait(0.1)
         finally:
             try:
                 self.collector.close()

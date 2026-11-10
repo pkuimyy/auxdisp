@@ -10,7 +10,7 @@
 
 ## 本地配置
 
-首次将 `config.example.toml` 复制为 `config.toml`；已有配置无需覆盖。默认自动读取当前工作目录的 `config.toml`，也可使用 `--config <路径>`。文件已被 Git 忽略，只包含显示设置及稳定账户 ID，不含令牌。
+配置依次选择显式 `--config <路径>`、`%LOCALAPPDATA%\auxdisp-codex-quota\config.toml` 和内置默认值，不再自动读取当前工作目录。开发时可用 `--config config.example.toml`，或先复制示例后显式指定本地配置文件；已有配置无需覆盖。文件只包含显示设置及稳定账户 ID，不含令牌。常驻命令、日志和卸载步骤见 [Windows 后台运行](background.md)。
 
 | 配置 | 默认值 |
 |---|---|
@@ -71,6 +71,10 @@ uv run --locked --no-sources auxdisp-codex-quota --demo --headless previews/late
 | `display.py` | 独立 USB 线程、只保留最新帧、断线重试与同帧去重 |
 | `runtime.py` | 60 秒采集、15 秒轮播、分钟时钟及可见内容去重 |
 | `cli.py` | 正常启动、预览、只读检查和有界测试 |
+| `paths.py` | 全局安装后的用户配置、日志与状态目录 |
+| `service.py` / `scheduler.py` | 幂等 CLI 生命周期和当前用户计划任务 |
+| `win32.py` / `host.py` | 单实例互斥锁、停止 Event、健康心跳和轮转日志 |
+| `_background.py` | 计划任务专用的安装包内部运行入口 |
 
 采集、页面调度和 USB 传输互不阻塞。无账户也显示时钟；整体请求失败保留全部历史数据，单账户失败仅保留该账户历史并标记 `STALE`。最近请求成功时间与 `usage.updated_at` 分开保存。账户顺序变化保留当前稳定 ID；移除当前账户时优先选择旧顺序中的下一个存活账户。
 

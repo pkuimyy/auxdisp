@@ -21,6 +21,8 @@ Git 仓库：auxdisp
 
 `auxdisp-driver` 0.1.0 已完成基础实机验证并发布到 PyPI。`auxdisp-codex-quota` 以 `auxdisp-driver>=0.1.0,<0.2.0` 声明普通包索引依赖，独立维护锁文件，不导入驱动源码目录。应用已实现只读采集、不可变历史快照、账户轮播、Pillow 渲染和独立 USB 重连线程，详见[auxdisp-codex-quota 使用与架构](../../apps/auxdisp-codex-quota/docs/zh/usage.md)。
 
+`auxdisp-codex-quota` 支持当前用户 Windows 计划任务和 CLI 生命周期管理，使用安装环境的 `pythonw.exe`、单实例互斥锁和正常停止 Event。配置与轮转日志放在用户数据目录；详见 [Windows 后台运行](../../apps/auxdisp-codex-quota/docs/zh/background.md)。真实任务注册、登录恢复与 USB 插拔仍需系统/实机验收。
+
 ### CI 与发布
 
 `auxdisp-driver` CI 独立测试并构建 `auxdisp-driver`。`auxdisp-codex-quota` CI 从 PyPI 安装 `auxdisp-driver`，独立测试、构建，并验证 `auxdisp-codex-quota` wheel 安装与离线预览。`auxdisp-driver` 的发布工作流仅由显式推送 `auxdisp-driver-v<版本>` tag 触发，上传 PyPI 后将同一份制品发布到 GitHub Release。配置与操作见[auxdisp-driver 发布](releases.md)。`auxdisp-codex-quota` 发布流程仍待其达到发布阶段后配置。

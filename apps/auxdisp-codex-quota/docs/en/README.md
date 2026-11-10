@@ -8,12 +8,22 @@ Requires Python 3.11+, `codex-auth` with accounts already configured, and an acc
 
 ### Install and run
 
-From `apps/auxdisp-codex-quota`:
+Installed distributions support a current-user Windows background task:
+
+```powershell
+auxdisp-codex-quota start
+auxdisp-codex-quota status
+auxdisp-codex-quota stop
+auxdisp-codex-quota restart
+```
+
+Installation does not register a task; the first `start` does. Configuration defaults to `%LOCALAPPDATA%\auxdisp-codex-quota\config.toml`. See [Windows background operation and removal](background.md). This implementation does not publish a new PyPI release.
+
+For source development, from `apps/auxdisp-codex-quota`:
 
 ```powershell
 uv sync --locked --no-sources
-Copy-Item config.example.toml config.toml
-uv run --locked --no-sources auxdisp-codex-quota
+uv run --locked --no-sources auxdisp-codex-quota run --config config.example.toml
 ```
 
 Defaults: collect every 60 seconds, rotate every 15 seconds, and use 30% brightness. Stop with Ctrl+C. The only account command is `codex-auth list --api --json`; the app does not switch accounts or consume reset credits.

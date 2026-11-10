@@ -2,6 +2,12 @@
 
 [English version](docs/en/CHANGELOG.md)
 
+### 未发布
+
+- 增加当前用户 Windows 后台计划任务、CLI 生命周期、单实例互斥锁与正常停止。
+- 配置、轮转日志和匿名健康状态使用当前用户应用数据目录。
+- 完整变更见[中文记录](docs/zh/CHANGELOG.md)。
+
 ### 0.1.0
 
 - 从 PyPI 依赖已发布的 auxdisp-driver。
