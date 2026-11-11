@@ -118,6 +118,6 @@ Removing the package and deleting user data are separate operations. These steps
 
 ## Limitations and verification scope
 
-Currently targets one Turing USB 5.2-inch display at 1280×720 landscape. On 2026-11-11, PyPI 0.1.0 passed a 75-second foreground run with real collection, rotation and user-confirmed display/NOT LIMITED behavior; see the [hardware record](hardware-testing.md). Pre-release builds of 0.1.2 additionally passed [installed CLI acceptance](windows-installation-verification.md) for user-level pip, venv and uv tool. Logon/resume and long-duration stability remain unverified; other models are outside scope. A publishable device photo is not yet available.
+Supports the Turing USB 5.2-inch display on Windows at 1280×720 landscape. Other models are outside application support. Logon startup, sleep recovery and long-duration stability have not been comprehensively verified.
 
 For development, see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md). Licensed under [GPL-3.0-or-later](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/LICENSE). [codex-auth](https://github.com/Loongphy/codex-auth) is an independent data source. AuxDisp is not an official OpenAI product.

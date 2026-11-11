@@ -29,7 +29,7 @@ auxdisp/
 In PowerShell, first enter the repository root and set an absolute shared cache path:
 
 ```powershell
-Set-Location D:\project\auxdisp
+Set-Location 'C:\path\to\auxdisp'
 $env:UV_CACHE_DIR = Join-Path $PWD.Path '.artifacts\uv-cache'
 ```
 
@@ -50,13 +50,3 @@ uv build --no-sources
 `.artifacts/` and each project's `.venv` are already ignored by Git. Do not commit caches, virtual environments, or build outputs; continue committing `uv.lock`.
 
 If access to `.lock` in the default user cache is denied, first check that `UV_CACHE_DIR` points to the shared directory above. If a Python build subprocess still reports `PermissionError: [WinError 5]` in a temporary directory, check the terminal or execution sandbox's file access permissions. Retry in a local terminal with the appropriate permissions, or follow the authorization process of the managed execution environment. Changing the cache directory alone cannot resolve sandbox permission restrictions; dependency or lockfile changes are unnecessary for this issue.
-
-## auxdisp-codex-quota current UI baseline
-
-Current defaults collect every 60 seconds and rotate every 15 seconds, with 44px identities/percentages and 24px elsewhere. Earlier designs specified 10-second rotation and three sizes; documentation follows the code and confirmed UI without changing behavior for documentation work. CREDITS, RESET CARDS, and NEXT EXPIRY remain `N/A` and must not be described as real resource data.
-
-## auxdisp-codex-quota development gate
-
-`auxdisp-driver` 0.1.0 is published and `auxdisp-codex-quota` now uses an ordinary bounded index dependency, with no local path, editable, Workspace, or Git dependency. See [Architecture](architecture.md).
-
-[auxdisp-driver publishing and release tags](releases.md)

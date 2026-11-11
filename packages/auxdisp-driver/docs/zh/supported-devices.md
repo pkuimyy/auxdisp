@@ -32,10 +32,8 @@
 
 ### 验收与系统范围
 
-[NOTICE] 中记录了 Turing USB 5.2 英寸清屏白条修复的实机现象与原生尺寸对照；这只是特定问题的验证记录，不能当作完整 Windows 实机矩阵通过。其他系列和尺寸仅表示协议代码保留，尚无本仓库完整验收结论。模拟器、单元测试、真实账户的无设备运行也不能替代硬件测试。
+Turing USB 5.2 英寸已进行有限的 Windows 实机验证；其他系列和尺寸仅表示协议代码保留，尚无完整实机兼容性结论。模拟器和单元测试不能替代硬件测试。
 
 Windows 设备需要兼容的 USB 接口驱动或可访问的串口；Linux 需要相应设备权限；macOS 需要可用的 USB 后端或串口。`libusb-package` 提供用户态库，不替代系统驱动或权限。驱动可安装到这些系统，不表示所有硬件已在各系统验证。
 
-auxdisp-codex-quota 仅面向 Turing USB 5.2 英寸、VID `0x1CBE` / PID `0x0050`、1280×720 横屏，不继承本表的全部型号支持。真实 USB 插拔、持续传输、休眠/登录恢复和长时间运行仍待单独验收。
-
-[NOTICE]: https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/NOTICE.md
+auxdisp-codex-quota 仅面向 Turing USB 5.2 英寸、VID `0x1CBE` / PID `0x0050`、1280×720 横屏，不继承本表的全部型号支持。应用支持边界见[应用限制](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/README.md#限制与验证范围)。

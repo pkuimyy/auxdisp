@@ -25,7 +25,7 @@ codex-auth list --api --json
 
 核对 Turing USB 5.2 英寸、VID `0x1CBE` / PID `0x0050` 和数据线；同品牌其他型号不属于应用支持范围。用 Windows 设备管理器检查设备和兼容接口驱动。`libusb-package` 是用户态库，安装成功不代表 Windows 接口驱动或访问权限已正确配置。不要仅凭 `process_running=true` 判断 USB 可用。
 
-更多设备信息见 [支持设备](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)。已完成的 USB 实测及未验证场景见 [实机测试记录](hardware-testing.md)。
+更多设备信息见 [支持设备](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)。
 
 ## 连接正常但没有画面
 
@@ -48,7 +48,9 @@ auxdisp-codex-quota run
 
 ## Windows 后台启动失败或停止后又启动
 
-安全软件拦截或旧版 `could not complete` 报错的诊断边界、Direct COM 可行性及当前验证限制，见 [Windows 后台安全拦截验证报告](windows-background-validation.md)。当前源码新增进程创建、超时、响应解析和 COM HRESULT 分类；旧版通用错误不能直接证明 Windows 策略或权限问题。已知被拦截时不要反复执行同一命令；由管理员核查关联事件与授权。
+根据错误码区分进程创建、超时、响应解析和 COM 调用失败。通用错误不能直接证明安全软件拦截；请结合任务计划程序和系统事件检查权限及策略。
+
+若错误包含 `rollback=failed/unavailable` 或最终状态未知，不代表任务已经清理。先检查 `status` 和任务计划程序中的实际状态，再决定恢复操作。
 
 检查 `status` 的 `registered`、`enabled` 和 `process_running`。注册失败时检查 Task Scheduler 是否可用、当前用户任务权限及系统策略；应用不自动提权。确认任务使用的 Python 环境仍存在且具备 `pythonw.exe`，以及 codex-auth 路径可解析。升级或迁移安装后运行 `start` 更新关联。
 
@@ -69,7 +71,7 @@ auxdisp-codex-quota run
 | `TASK_MARKER_MISMATCH` | Description 不包含预期管理标记；拒绝管理 |
 | `TASK_ACTION_MISMATCH` | 动作不是唯一的预期后台启动动作；拒绝管理 |
 
-在任务计划程序中只读检查任务身份、Description 和启动参数；不要通过删除任务或绕过检查来掩盖问题。使用包含修复的安装版本后重试；仍失败时附脱敏错误码。验收范围见 [实机测试记录](hardware-testing.md)。
+在任务计划程序中只读检查任务身份、Description 和启动参数；不要通过删除任务或绕过检查来掩盖问题。使用包含修复的安装版本后重试；仍失败时附脱敏错误码。
 
 ## 提交问题
 

@@ -16,7 +16,7 @@ auxdisp-codex-quota restart
 
 `pip install` 只安装包和 CLI，不注册任务。第一次 `start` 才注册 `auxdisp-codex-quota-<当前用户 SID>` 计划任务，并立即启动。应用使用当前安装环境的绝对 `pythonw.exe` 路径调用包内入口；无需源码目录、uv 缓存或打开的 PowerShell 窗口。
 
-从 0.1.2 起只使用 Python Direct COM 管理计划任务，不再启动 PowerShell 或使用编码命令，也没有备用后端。Windows 会安装 pywin32；权限拒绝时返回明确错误，不切换调用路径。标准 `pip --user`、venv 和 uv tool 的实际 CLI 启停已完成本机验证，见 [安装路径验证记录](windows-installation-verification.md)。0.1.1 不包含这些修复。
+从 0.1.2 起使用 Python Direct COM 管理计划任务，支持标准 `pip --user`、venv 和 uv tool 安装。Windows 会安装 pywin32；权限拒绝时返回错误。
 
 0.1.2 后台使用 `-E -P -m auxdisp_codex_quota._background`：忽略解释器环境变量（例如 `PYTHONPATH`），不将当前目录加入模块搜索路径，同时允许标准用户级 `site-packages`，供应用和依赖加载。用户目录仍属于受信任的 Python 安装环境，包括其中的 `.pth` 和定制模块；这不是完整的 `-I` 隔离模式。支持全局、标准 `pip --user` 和虚拟环境安装；仍需保留所用 Python 环境。
 
@@ -99,13 +99,3 @@ pip uninstall auxdisp-codex-quota
 ```
 
 `uninstall-service` 先停止实例再删除本用户的计划任务，保留配置、日志和诊断状态。安装升级本身不修改任务；升级后执行 `start` 或 `restart` 使任务与当前安装环境一致。
-
-## 验证范围
-
-当前源码已完成单一 Direct COM 后端切换；状态转移及历史验收见 [生命周期加固报告](windows-lifecycle-hardening.md)，最新安装验收见 [安装路径验证记录](windows-installation-verification.md)。失败可能报告 `rollback=failed/unavailable` 和最终状态未知，不能把它视为已清理。
-
-2026-11-11 已验证 PyPI 0.1.0 的真实屏幕前台运行和只读 `status` 查询，详见 [实机测试记录](hardware-testing.md)。本次未注册真实后台任务。
-
-自动化测试使用模拟 COM、合成账户和虚拟输出，覆盖首次/重复启动、启停、重启、解释器迁移、拒绝访问、超时、失败回滚及任务卸载，并检查已安装运行时代码不包含旧后端。真实任务写入须明确授权；安装验证使用真实 CLI，开始前确认没有已有任务/实例，完成后清理测试任务并恢复原状态文件。
-
-真实任务基本启停和安装路径已完成上述验证；完整终端关闭、重新登录、休眠/电池行为、真实崩溃重试、长时间运行和 USB 人工插拔仍需另外验收，不能由自动化或短时间任务测试推断通过。

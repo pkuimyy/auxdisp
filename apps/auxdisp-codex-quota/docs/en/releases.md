@@ -33,11 +33,3 @@ git push origin auxdisp-codex-quota-v0.1.0
 ```
 
 If PyPI succeeds but GitHub Release fails, rerun only failed jobs using the same distributions retained for 14 days. Do not rebuild or overwrite published files. Do not repair failures by moving or deleting a release tag; code fixes require a new version.
-
-## Initial acceptance scope
-
-Version 0.1.0 includes read-only multi-account collection, historical snapshots, a 1280×720 TUI, USB reconnection, and current-user Windows background task management. CREDITS, RESET CARDS, and NEXT EXPIRY still display `N/A`.
-
-On 2026-11-11, PyPI 0.1.0 passed 106 automated tests, offline previews, and a 75-second foreground run on a physical screen. Two account collections, USB output, rotation, and display policy passed their respective checks. See the [hardware test record](hardware-testing.md). Real scheduled-task registration, logon/resume behavior, and physical USB unplug/replug with this distribution still require system/hardware acceptance. Publication does not mark those scenarios passed.
-
-Version 0.1.1 fixes ownership errors caused by equivalent task username/SID representations. Local pre-release verification covered real temporary-task registration, status, start/stop, restart, and uninstall while preserving the existing task. This does not establish logon/resume or long-duration acceptance.

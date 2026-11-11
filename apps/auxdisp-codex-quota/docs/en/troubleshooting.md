@@ -25,7 +25,7 @@ Under the same Windows user running this app, follow [codex-auth](https://github
 
 Check the Turing USB 5.2-inch model, VID `0x1CBE` / PID `0x0050`, and a data-capable cable. Other models are outside application support. Inspect the device and compatible interface driver in Windows Device Manager. `libusb-package` is a user-space library; successful installation does not establish correct Windows interface binding or access. `process_running=true` alone does not prove USB access.
 
-See [supported devices](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md). Completed USB checks and remaining scenarios are listed in the [hardware test record](hardware-testing.md).
+See [supported devices](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md).
 
 ## Connected but blank
 
@@ -48,7 +48,9 @@ This means no usable data for that window, not an exhausted quota. Windows are m
 
 ## Background startup fails or unexpected restart
 
-See the [Windows background security validation report](windows-background-validation.md) for safe diagnostics, Direct COM feasibility and remaining limitations. Current source distinguishes process creation, timeout, response parsing and COM HRESULT failures; the old generic message does not prove a Windows policy or permission problem. Do not repeatedly invoke a known-blocked command; ask the administrator to correlate events and authorization.
+Use the error code to distinguish process creation, timeout, response parsing and COM failures. A generic error does not establish a security-software block; inspect Task Scheduler and system events for permission or policy failures.
+
+An error reporting `rollback=failed/unavailable` or an unknown final state does not establish cleanup. Inspect `status` and the actual task in Task Scheduler before deciding how to recover.
 
 Inspect `registered`, `enabled`, and `process_running` in `status`. For registration failures, check Task Scheduler availability, current-user task permissions, and policy; the app does not elevate. Ensure the task’s Python environment still exists with `pythonw.exe`, and codex-auth resolves. Run `start` after upgrades or environment migration to reconcile the task.
 
@@ -69,7 +71,7 @@ Since 0.1.1, the app resolves Task Scheduler's `Principal.UserId` (SID, local us
 | `TASK_MARKER_MISMATCH` | Description lacks the expected management marker; management denied |
 | `TASK_ACTION_MISMATCH` | Actions do not contain exactly the expected background launch action; management denied |
 
-Inspect the principal, Description, and arguments in Task Scheduler without changing the task. Do not delete tasks or bypass checks to hide the error. Retry with an installation containing the fix and report redacted error codes if it persists. See the [hardware test record](hardware-testing.md) for verification scope.
+Inspect the principal, Description, and arguments in Task Scheduler without changing the task. Do not delete tasks or bypass checks to hide the error. Retry with an installation containing the fix and report redacted error codes if it persists.
 
 ## Report a problem
 

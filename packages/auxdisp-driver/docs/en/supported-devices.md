@@ -31,10 +31,8 @@ This table describes the device communication capabilities in each protocol clas
 
 ### Verification and platform scope
 
-[NOTICE] records a Turing USB 5.2-inch clear-screen stripe issue and a native-size control image. This is a narrowly scoped hardware observation, not acceptance of the full Windows hardware matrix. Other families and sizes indicate preserved code without a complete repository acceptance result. Simulators, unit tests, and device-free real-account runs do not replace hardware tests.
+The Turing USB 5.2-inch display has had limited physical-device testing on Windows. Other families and sizes retain protocol code without complete hardware compatibility verification. Simulator and unit tests do not establish hardware compatibility.
 
 Windows needs a compatible USB interface driver or accessible serial port; Linux needs device permissions; macOS needs a working USB backend or serial path. `libusb-package` provides a user-space library, not system drivers or permissions. Installation on these platforms does not establish hardware verification on each.
 
-auxdisp-codex-quota targets only Turing USB 5.2-inch, VID `0x1CBE` / PID `0x0050`, at 1280×720 landscape; it does not support every model in this table. Physical USB reconnects, sustained transfers, sleep/logon recovery, and long-duration operation require separate acceptance.
-
-[NOTICE]: https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/NOTICE.md
+auxdisp-codex-quota targets only Turing USB 5.2-inch, VID `0x1CBE` / PID `0x0050`, at 1280×720 landscape; it does not support every model in this table. See the [application limitations](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/en/README.md#limitations-and-verification-scope) for its support boundaries.

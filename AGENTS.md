@@ -43,6 +43,33 @@
 - Distinguish code-level checks from physical-device acceptance. Do not mark
   the Turing 5.2-inch hardware matrix passed without a real Windows run.
 
+## Documentation scope / 文档范围
+
+- Keep README files focused on prospective users: purpose, installation, quick
+  start, supported devices, and material limitations. Keep `docs/zh` and
+  `docs/en` for durable usage, configuration, troubleshooting, architecture,
+  development, and release instructions; update existing pages before adding one.
+  README 面向潜在用户；正式 docs 只保留长期有效的使用与维护指南，优先更新已有页面。
+- Store plans, investigations, migration histories, local environment incidents,
+  test/acceptance reports, command transcripts, and release verification evidence
+  under the ignored root `.codex/` directory. Store generated logs, screenshots,
+  and distributions under `.artifacts/`. Do not commit or package these records.
+  计划、排查、迁移与验收过程记录归档到 `.codex/`；生成制品放在 `.artifacts/`。
+- Public documentation must not link to `.codex/`, `.artifacts/`, or local-only
+  records. Extract only user-actionable instructions and concise compatibility
+  limits from such records. Do not publish machine-specific paths, identities,
+  security-product details, raw logs, test counts, or session chronology.
+  正式文档不引用本地记录，不披露本机身份、环境细节、日志或测试流水账。
+- Keep Chinese and English guidance aligned. Maintain one home for each topic,
+  link to it instead of duplicating details, and remove stale navigation when
+  archiving pages. Changelogs describe released behavior, not validation sessions.
+  中英文同步；同一主题集中维护；归档时清理链接；更新日志只描述发行变化。
+- Preserve license/source attribution, API contracts, security-relevant behavior,
+  and honest support limits. Local hardware results must not become unsupported
+  compatibility claims. Validate documentation links and package contents after
+  restructuring; documentation-only work must not manipulate real tasks/devices.
+  保留许可证、来源说明、接口约定和真实支持边界；文档整理后检查链接与包内容。
+
 ## Commands and releases
 
 - Run uv commands in the selected project's directory, for example

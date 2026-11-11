@@ -19,9 +19,9 @@ Git 仓库：auxdisp
 
 ### auxdisp-codex-quota
 
-`auxdisp-driver` 与 `auxdisp-codex-quota` 0.1.0 均已发布到 PyPI；具体硬件验证范围见[支持设备](../../packages/auxdisp-driver/docs/zh/supported-devices.md)。`auxdisp-codex-quota` 以 `auxdisp-driver>=0.1.0,<0.2.0` 声明普通包索引依赖，独立维护锁文件，不导入驱动源码目录。应用已实现只读采集、不可变历史快照、账户轮播、Pillow 渲染和独立 USB 重连线程，详见[auxdisp-codex-quota 配置与预览](../../apps/auxdisp-codex-quota/docs/zh/usage.md)。
+`auxdisp-driver` 与 `auxdisp-codex-quota` 独立发布到 PyPI；具体硬件验证范围见[支持设备](../../packages/auxdisp-driver/docs/zh/supported-devices.md)。`auxdisp-codex-quota` 以 `auxdisp-driver>=0.1.0,<0.2.0` 声明普通包索引依赖，独立维护锁文件，不导入驱动源码目录。应用已实现只读采集、不可变历史快照、账户轮播、Pillow 渲染和独立 USB 重连线程，详见[auxdisp-codex-quota 配置与预览](../../apps/auxdisp-codex-quota/docs/zh/usage.md)。
 
-`auxdisp-codex-quota` 支持当前用户 Windows 计划任务和 CLI 生命周期管理，使用安装环境的 `pythonw.exe`、单实例互斥锁和正常停止 Event。配置与轮转日志放在用户数据目录；详见 [Windows 后台运行](../../apps/auxdisp-codex-quota/docs/zh/background.md)。真实任务注册、登录恢复与 USB 插拔仍需系统/实机验收。
+`auxdisp-codex-quota` 支持当前用户 Windows 计划任务和 CLI 生命周期管理，使用安装环境的 `pythonw.exe`、单实例互斥锁和正常停止 Event。配置与轮转日志放在用户数据目录；详见 [Windows 后台运行](../../apps/auxdisp-codex-quota/docs/zh/background.md)。
 
 ### CI 与发布
 
