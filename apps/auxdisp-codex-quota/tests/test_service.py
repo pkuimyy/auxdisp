@@ -1,7 +1,6 @@
 """Lifecycle acceptance with a fake scheduler and isolated synthetic processes."""
 
 from contextlib import contextmanager
-import base64
 from datetime import datetime, timezone
 import json
 import logging
@@ -11,7 +10,7 @@ import sys
 from threading import Event, Thread
 import time
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock, patch
 import uuid
 from xml.etree import ElementTree as ET
 
@@ -27,9 +26,10 @@ from auxdisp_codex_quota.model import DataError
 from auxdisp_codex_quota.paths import AppPaths, select_config
 from auxdisp_codex_quota.render import Renderer
 from auxdisp_codex_quota.runtime import Runtime
-from auxdisp_codex_quota.scheduler import BRIDGE, MARKER, NS, TaskScheduler, TaskSpec
-from auxdisp_codex_quota.service import ServiceController, read_state, write_state
-from auxdisp_codex_quota.win32 import InstanceBusy, ServiceError, WindowsIPC, current_sid
+from auxdisp_codex_quota.scheduler import MARKER, NS, TaskScheduler, TaskSpec
+from auxdisp_codex_quota.service import LifecycleError, ServiceController, disabled_xml, read_state, write_state
+from auxdisp_codex_quota.task_adapter import SchedulerError
+from auxdisp_codex_quota.win32 import InstanceBusy, ServiceError, WindowsIPC
 
 
 class FakeIPC:
@@ -73,13 +73,18 @@ class FakeScheduler:
         self.events.append(operation)
         if operation == "register":
             root = ET.fromstring(values["xml"])
-            self.task = {"registered": True, "enabled": True,
+            self.task = {"registered": True, "enabled": root.findtext(f"{{{NS}}}Settings/{{{NS}}}Enabled") == "true",
+                         "xml": values["xml"],
                          "description": root.findtext(f"{{{NS}}}RegistrationInfo/{{{NS}}}Description"),
                          "python": root.findtext(f"{{{NS}}}Actions/{{{NS}}}Exec/{{{NS}}}Command")}
         elif operation == "run":
             self.ipc.active = True
         elif operation in ("enable", "disable"):
             self.task["enabled"] = operation == "enable"
+            if self.task.get("xml"):
+                root = ET.fromstring(self.task["xml"])
+                root.find(f"{{{NS}}}Settings/{{{NS}}}Enabled").text = str(self.task["enabled"]).lower()
+                self.task["xml"] = ET.tostring(root, encoding="unicode")
         elif operation == "end":
             self.ipc.active = False
         elif operation == "delete":
@@ -130,6 +135,21 @@ def test_first_start_repeat_start_stop_restart_and_uninstall(managed):
     assert controller.paths.config.exists()  # personal configuration is retained
 
 
+@pytest.mark.parametrize("command", ["start", "restart"])
+def test_legacy_task_is_migrated_without_deleting_it(managed, command):
+    controller, events, _, scheduler = managed
+    with patch.object(TaskSpec, "arguments", new_callable=PropertyMock) as arguments:
+        arguments.return_value = "-I -m auxdisp_codex_quota._background --config legacy"
+        controller.execute("start")
+    old_description = scheduler.task["description"]
+    baseline = len(events)
+    assert controller.execute(command)["process_running"]
+    operations = events[baseline:]
+    assert operations.index("disable") < operations.index("register") < operations.index("run")
+    assert scheduler.task["description"] != old_description
+    assert "delete" not in events
+
+
 def test_environment_upgrade_stops_old_instance_then_updates_one_task(managed):
     controller, events, ipc, scheduler = managed
     controller.execute("start")
@@ -157,11 +177,341 @@ def test_registration_policy_failure_does_not_enable_or_run_a_task(managed, monk
     assert "run" not in events and "enable" not in events
 
 
+def test_run_rejection_does_not_leave_new_task_enabled(managed, monkeypatch):
+    controller, _, _, scheduler = managed
+    original = scheduler.call
+
+    def denied(operation, **values):
+        if operation == "run":
+            raise ServiceError("ACCESS_DENIED: run rejected; no automatic elevation")
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", denied)
+    with pytest.raises(ServiceError, match="ACCESS_DENIED"):
+        controller.execute("start")
+    assert not scheduler.task.get("enabled", False)
+
+
+@pytest.mark.parametrize("phase,commit", [
+    ("register", False), ("register", True), ("enable", False), ("enable", True),
+    ("run", False), ("run", True),
+])
+def test_failed_new_start_restores_absence_even_after_committed_error(managed, monkeypatch, phase, commit):
+    controller, events, ipc, scheduler = managed
+    original = scheduler.call
+    failed = False
+
+    def injected(operation, **values):
+        nonlocal failed
+        if operation == phase and not failed:
+            failed = True
+            if commit:
+                original(operation, **values)
+            raise SchedulerError("ACCESS_DENIED", operation, "task_operation", hresult=0x80070005)
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", injected)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.rollback == "restored"
+    assert caught.value.final_state["state"] == "missing"
+    assert not scheduler.task["registered"] and not ipc.active
+    assert events.count("run") <= 1
+
+
+def test_registration_is_disabled_and_verified_before_activation(managed, monkeypatch):
+    controller, events, _, scheduler = managed
+    original = scheduler.call
+
+    def inspect(operation, **values):
+        if operation == "register":
+            root = ET.fromstring(values["xml"])
+            assert root.findtext(f"{{{NS}}}Settings/{{{NS}}}Enabled") == "false"
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", inspect)
+    controller.execute("start")
+    assert events.index("register") < events.index("enable") < events.index("run")
+
+
+def test_start_confirmation_timeout_cleans_new_task(managed, monkeypatch):
+    controller, _, ipc, scheduler = managed
+    original = scheduler.call
+    monkeypatch.setattr(scheduler, "call", lambda operation, **values:
+                        {} if operation == "run" else original(operation, **values))
+    with pytest.raises(LifecycleError, match="startup was not confirmed") as caught:
+        controller.execute("start")
+    assert caught.value.final_state["state"] == "missing" and caught.value.rollback == "restored"
+    assert not ipc.active
+
+
+def test_cleanup_denial_reports_known_enabled_residual(managed, monkeypatch):
+    controller, events, _, scheduler = managed
+    original = scheduler.call
+
+    def denied(operation, **values):
+        if operation in ("run", "disable"):
+            raise SchedulerError("ACCESS_DENIED", operation, "task_operation")
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", denied)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    error = caught.value
+    assert error.rollback == "failed" and error.final_state["state"] == "enabled"
+    assert "ACCESS_DENIED" in error.cleanup_error
+    assert "delete" not in events and scheduler.task["enabled"]
+
+
+def test_transport_block_never_retries_cleanup_and_reports_unknown(managed, monkeypatch):
+    controller, _, _, scheduler = managed
+    original = scheduler.call
+    calls = []
+
+    def blocked(operation, **values):
+        calls.append(operation)
+        if operation == "run":
+            raise SchedulerError("PROCESS_START_FAILED", operation, "process_start", winerror=5)
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", blocked)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert calls[-1] == "run" and caught.value.rollback == "unavailable"
+    assert caught.value.final_state["state"] == "unknown"
+
+
+@pytest.mark.parametrize("command", ["start", "restart"])
+def test_failure_restores_original_running_task_and_launch_state(managed, monkeypatch, command):
+    controller, _, ipc, scheduler = managed
+    controller.execute("start")
+    prior = dict(scheduler.task)
+    launch = controller.paths.state.parent / "launch.json"
+    prior_launch = launch.read_bytes()
+    monkeypatch.setattr("auxdisp_codex_quota.task_spec.__version__", "0.2.0")
+    original = scheduler.call
+    failed = False
+
+    def deny_new_run(operation, **values):
+        nonlocal failed
+        if operation == "run" and not failed:
+            failed = True
+            raise ServiceError("ACCESS_DENIED: candidate startup rejected")
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", deny_new_run)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute(command)
+    assert caught.value.rollback == "restored" and ipc.active
+    assert scheduler.task["description"] == prior["description"]
+    assert scheduler.task["enabled"] == prior["enabled"]
+    assert launch.read_bytes() == prior_launch
+
+
+@pytest.mark.parametrize("omit_settings", [False, True])
+def test_restore_xml_accepts_omitted_windows_default_settings(managed, omit_settings):
+    controller, _, _, scheduler = managed
+    controller.execute("start")
+    root = ET.fromstring(scheduler.task["xml"])
+    settings = root.find(f"{{{NS}}}Settings")
+    if omit_settings:
+        root.remove(settings)
+    else:
+        settings.remove(settings.find(f"{{{NS}}}Enabled"))
+    restored = ET.fromstring(disabled_xml(ET.tostring(root, encoding="unicode")))
+    assert restored.findtext(f"{{{NS}}}Settings/{{{NS}}}Enabled") == "false"
+
+
+def test_failed_restart_restores_running_task_with_omitted_default_enabled(managed, monkeypatch):
+    controller, _, ipc, scheduler = managed
+    controller.execute("start")
+    root = ET.fromstring(scheduler.task["xml"])
+    settings = root.find(f"{{{NS}}}Settings")
+    settings.remove(settings.find(f"{{{NS}}}Enabled"))
+    scheduler.task["xml"] = ET.tostring(root, encoding="unicode")
+    prior_description = scheduler.task["description"]
+    # The fake must accept omission just as Windows does when disabling it.
+    original_call = scheduler.call
+    failed = False
+
+    def canonical(operation, **values):
+        nonlocal failed
+        if operation in ("enable", "disable") and scheduler.task.get("xml"):
+            current = ET.fromstring(scheduler.task["xml"])
+            settings = current.find(f"{{{NS}}}Settings")
+            if settings.find(f"{{{NS}}}Enabled") is None:
+                ET.SubElement(settings, f"{{{NS}}}Enabled").text = "true"
+                scheduler.task["xml"] = ET.tostring(current, encoding="unicode")
+        if operation == "run" and not failed:
+            failed = True
+            raise ServiceError("First candidate run rejected")
+        return original_call(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", canonical)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("restart")
+    assert caught.value.rollback == "restored" and ipc.active and scheduler.task["enabled"]
+    assert scheduler.task["description"] == prior_description
+
+
+def test_preflight_failure_never_stops_original_healthy_instance(managed, monkeypatch):
+    controller, events, ipc, scheduler = managed
+    controller.execute("start")
+    before = len(events)
+    monkeypatch.setattr("auxdisp_codex_quota.service.load_settings", Mock(side_effect=ValueError("PRIVATE token/path")))
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert ipc.active and scheduler.task["enabled"] and len(events) == before
+    assert caught.value.rollback == "not_needed" and caught.value.final_state["state"] == "running"
+    assert "PRIVATE" not in str(caught.value)
+
+
+@pytest.mark.parametrize("prior_enabled", [False, True])
+def test_failed_start_restores_existing_idle_enable_state(managed, monkeypatch, prior_enabled):
+    controller, _, ipc, scheduler = managed
+    controller.execute("start")
+    controller.execute("stop")
+    if prior_enabled:
+        scheduler.call("enable")
+    description = scheduler.task["description"]
+    original = scheduler.call
+    monkeypatch.setattr(scheduler, "call", lambda operation, **values:
+                        (_ for _ in ()).throw(ServiceError("Run denied")) if operation == "run"
+                        else original(operation, **values))
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.rollback == "restored" and not ipc.active
+    assert scheduler.task["registered"] and scheduler.task["enabled"] == prior_enabled
+    assert scheduler.task["description"] == description
+
+
+def test_cleanup_read_failure_reports_unknown(managed, monkeypatch):
+    controller, _, _, scheduler = managed
+    original_call, original_query = scheduler.call, scheduler.query
+    failed = False
+
+    def fail_run(operation, **values):
+        nonlocal failed
+        if operation == "run":
+            failed = True
+            raise ServiceError("Run denied")
+        return original_call(operation, **values)
+
+    def fail_read():
+        if failed:
+            raise ServiceError("Read denied")
+        return original_query()
+
+    monkeypatch.setattr(scheduler, "call", fail_run)
+    monkeypatch.setattr(scheduler, "query", fail_read)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.rollback == "failed" and caught.value.final_state["state"] == "unknown"
+
+
+def test_failed_stop_restores_enable_flag_without_replacing_or_stopping_original_again(managed, monkeypatch):
+    controller, events, ipc, scheduler = managed
+    controller.execute("start")
+    ipc.wedged = True
+    original = scheduler.call
+    calls = []
+
+    def deny_end(operation, **values):
+        calls.append(operation)
+        if operation == "end":
+            raise ServiceError("Stop denied")
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", deny_end)
+    baseline = events.count("register")
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("stop")
+    assert caught.value.rollback == "restored" and ipc.active and scheduler.task["enabled"]
+    assert calls.count("end") == 1 and events.count("register") == baseline
+
+
+def test_cleanup_identity_change_never_stops_unrelated_instance(managed, monkeypatch):
+    controller, events, ipc, scheduler = managed
+    original = scheduler.call
+
+    def changed(operation, **values):
+        if operation == "run":
+            scheduler.task["description"] = "another managed identity"
+            ipc.active = True
+            raise ServiceError("Run failed; ownership changed externally")
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", changed)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.rollback == "failed" and "IDENTITY_CHANGED" in caught.value.cleanup_error
+    assert ipc.active and "signal" not in events and "end" not in events and "delete" not in events
+
+
+def test_snapshot_query_failure_reports_unknown_without_repeating_query(managed, monkeypatch):
+    controller, events, _, scheduler = managed
+    query = Mock(side_effect=SchedulerError("ACCESS_DENIED", "query", "get_task"))
+    monkeypatch.setattr(scheduler, "query", query)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.final_state["state"] == "unknown" and not events
+    query.assert_called_once()
+
+
+def test_adapter_identity_mismatch_is_rejected_before_task_access(managed, monkeypatch):
+    controller, events, _, scheduler = managed
+    scheduler.sid = "S-1-5-18"
+    query = Mock()
+    monkeypatch.setattr(scheduler, "query", query)
+    with pytest.raises(LifecycleError, match="TASK_IDENTITY_MISMATCH") as caught:
+        controller.execute("start")
+    assert caught.value.final_state["state"] == "unknown" and not events
+    query.assert_not_called()
+
+
+def test_enable_triggered_instance_is_reclaimed_even_without_explicit_run(managed, monkeypatch):
+    controller, events, ipc, scheduler = managed
+    original = scheduler.call
+
+    def auto_start(operation, **values):
+        result = original(operation, **values)
+        if operation == "enable":
+            ipc.active = True  # Scheduler trigger started it, without a Run call.
+        return result
+
+    monkeypatch.setattr(scheduler, "call", auto_start)
+    monkeypatch.setattr(ipc, "running", lambda: False)  # The host never confirms readiness.
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.rollback == "restored" and not ipc.active
+    assert "run" not in events and "signal" in events and not scheduler.task["registered"]
+
+
+def test_launch_identity_drift_blocks_rollback_without_stopping_process(managed, monkeypatch):
+    controller, events, ipc, scheduler = managed
+    original = scheduler.call
+
+    def drift(operation, **values):
+        if operation == "run":
+            root = ET.fromstring(scheduler.task["xml"])
+            root.find(f"{{{NS}}}Actions/{{{NS}}}Exec/{{{NS}}}Arguments").text += " --config other.toml"
+            scheduler.task["xml"] = ET.tostring(root, encoding="unicode")
+            ipc.active = True
+            raise ServiceError("Run failed; external launch identity drift")
+        return original(operation, **values)
+
+    monkeypatch.setattr(scheduler, "call", drift)
+    with pytest.raises(LifecycleError) as caught:
+        controller.execute("start")
+    assert caught.value.rollback == "failed" and "IDENTITY_CHANGED" in caught.value.cleanup_error
+    assert ipc.active and "signal" not in events and "end" not in events and "delete" not in events
+
+
 def test_package_upgrade_restarts_existing_task_without_duplicate_registration(managed, monkeypatch):
     controller, events, _, scheduler = managed
     controller.execute("start")
     name = scheduler.name
-    monkeypatch.setattr("auxdisp_codex_quota.scheduler.__version__", "0.2.0")
+    monkeypatch.setattr("auxdisp_codex_quota.task_spec.__version__", "0.2.0")
     baseline = len(events)
     assert controller.execute("start")["process_running"]
     assert scheduler.name == name
@@ -190,7 +540,7 @@ def test_start_reuses_resolved_command_when_later_shell_lacks_path(managed, monk
     assert controller.execute("start")["process_running"]
     assert events.count("run") == 1
     controller.paths.config.write_text('[collector]\nexecutable="a-different-command"', encoding="utf-8")
-    with pytest.raises(DataError, match="COMMAND_NOT_FOUND"):
+    with pytest.raises(ServiceError, match="COMMAND_NOT_FOUND"):
         controller.execute("start")
 
 
@@ -251,20 +601,20 @@ def test_task_xml_defines_current_user_logon_bounded_recovery_and_absolute_paths
         assert root.findtext(target, namespaces=ns) == value
     assert root.findtext("t:Actions/t:Exec/t:Command", namespaces=ns) == str(spec.python)
     arguments = root.findtext("t:Actions/t:Exec/t:Arguments", namespaces=ns)
-    assert arguments.startswith("-I -m auxdisp_codex_quota._background ")
+    assert arguments.startswith("-E -P -m auxdisp_codex_quota._background ")
     assert str(spec.config) in arguments and str(spec.executable) in arguments
     assert root.findtext("t:Actions/t:Exec/t:WorkingDirectory", namespaces=ns) == str(tmp_path)
     assert MARKER in spec.description
 
 
 def test_scheduler_transport_is_hidden_json_and_does_not_echo_errors(tmp_path, monkeypatch):
-    monkeypatch.setattr("auxdisp_codex_quota.scheduler.system_directory", lambda: str(tmp_path))
     runner = Mock(return_value=SimpleNamespace(returncode=0, stdout='{"registered":false}'))
     scheduler = TaskScheduler("S-1-5-21-test", runner)
     scheduler.call("register", xml='<Task>quotes \' " $() & 中文</Task>')
     options = runner.call_args.kwargs
     command = runner.call_args.args[0]
-    assert "-WindowStyle" in command and "Hidden" in command and "-EncodedCommand" in command
+    assert command[-1] == "auxdisp_codex_quota._scheduler_com_worker"
+    assert "-E" in command and "-P" in command
     assert "xml" in json.loads(options["input"])
     assert "quotes" not in " ".join(command)
     runner.return_value = SimpleNamespace(returncode=1, stdout='{"error":"TASK_SCHEDULER_FAILED","code":5}')
@@ -369,6 +719,16 @@ def test_duplicate_host_cleans_workers_without_starting_collection(tmp_path):
     output.close.assert_called_once()
 
 
+def test_non_windows_foreground_host_does_not_construct_windows_ipc(monkeypatch):
+    from auxdisp_codex_quota import host
+
+    runtime = Mock()
+    monkeypatch.setattr(host, "os", SimpleNamespace(name="posix"))
+    monkeypatch.setattr(host, "WindowsIPC", lambda: pytest.fail("Windows IPC used on non-Windows foreground"))
+    host.run_host(runtime, duration=0.2)
+    runtime.run.assert_called_once_with(0.2)
+
+
 def test_health_retains_last_success_across_idle_restart(tmp_path):
     paths = AppPaths(tmp_path)
     stamp = datetime.now(timezone.utc).isoformat()
@@ -446,42 +806,6 @@ print('STOPPED', flush=True)
         if process.poll() is None:
             process.kill()  # only this test's Popen child
             process.communicate(timeout=5)
-
-
-@pytest.mark.skipif(os.name != "nt", reason="PowerShell syntax validation requires Windows")
-def test_fixed_scheduler_bridge_is_valid_powershell(tmp_path):
-    script = tmp_path / "bridge.ps1"
-    script.write_text(BRIDGE, encoding="utf-8-sig")
-    command = ("$errors = $null; $tokens = $null; "
-               "[void][System.Management.Automation.Language.Parser]::ParseFile($args[0], [ref]$tokens, [ref]$errors); "
-               "if ($errors.Count) { exit 1 }")
-    result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
-                             "& { " + command + " }", str(script)], capture_output=True,
-                            creationflags=subprocess.CREATE_NO_WINDOW, timeout=15)
-    assert result.returncode == 0, result.stderr
-
-
-@pytest.mark.skipif(os.name != "nt", reason="Native Task Scheduler XML parsing requires Windows")
-def test_task_xml_is_accepted_by_native_com_without_registering_any_task(tmp_path):
-    spec = TaskSpec(current_sid(), tmp_path / "pythonw.exe", tmp_path / "config.toml",
-                    tmp_path / "codex-auth.exe", tmp_path)
-    command = """
-$ErrorActionPreference = 'Stop'
-[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)
-[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
-$scheduler = New-Object -ComObject 'Schedule.Service'
-$scheduler.Connect()
-$definition = $scheduler.NewTask(0)
-$definition.XmlText = [Console]::In.ReadToEnd()
-exit 0
-"""
-    result = subprocess.run(
-        ["powershell.exe", "-NoProfile", "-NonInteractive", "-EncodedCommand",
-         base64.b64encode(command.encode("utf-16-le")).decode("ascii")],
-        input=spec.xml(), capture_output=True, encoding="utf-8", errors="replace", timeout=15,
-        creationflags=subprocess.CREATE_NO_WINDOW,
-    )
-    assert result.returncode == 0, result.stderr
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Read-only scheduler integration requires Windows")

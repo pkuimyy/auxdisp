@@ -23,6 +23,7 @@ def check(directory=Path("dist")):
         required = {f"auxdisp_codex_quota/{module}.py" for module in (
             "__init__", "__main__", "cli", "_background", "host", "paths", "scheduler", "service", "win32",
             "collector", "config", "display", "model", "render", "runtime",
+            "task_adapter", "task_spec", "direct_com", "_scheduler_com_worker",
         )} | {"auxdisp_codex_quota/data/demo.json"}
         if not required.issubset(names) or not any(n.endswith("/licenses/LICENSE") for n in names):
             raise ValueError("Wheel is missing required application modules, synthetic data, or license")
@@ -30,6 +31,9 @@ def check(directory=Path("dist")):
             raise ValueError("Wheel contains local driver sources or runtime data")
         if not any(r.startswith("auxdisp-driver") and "@" not in r for r in metadata.get_all("Requires-Dist", [])):
             raise ValueError("auxdisp-driver must remain an ordinary index dependency")
+        if not any(r.startswith("pywin32") and 'sys_platform == "win32"' in r
+                   for r in metadata.get_all("Requires-Dist", [])):
+            raise ValueError("Candidate COM dependency must be restricted to Windows")
         for label in ("Repository", "Documentation", "Issues"):
             if not any(u.startswith(f"{label}, https://") for u in metadata.get_all("Project-URL", [])):
                 raise ValueError(f"Missing HTTPS project URL: {label}")

@@ -66,7 +66,7 @@ Use `auxdisp-codex-quota run` for foreground debugging and Ctrl+C to exit; omitt
 | `restart` | Stop and start again, reloading configuration |
 | `uninstall-service` | Stop and remove the current-user task, preserving configuration and logs |
 
-Background operation can continue after the terminal closes. This is a logon task, not a system service that runs before login. Real task registration, logon/resume, battery behavior, and long-duration operation still require system acceptance.
+The background task is independent of its launching terminal and runs while the user is logged in, rather than as a pre-login system service. Full terminal closure, logon/resume, battery behavior and long-duration operation still require acceptance.
 
 To update, stop first, upgrade the package in the same Python environment, then start:
 
@@ -118,6 +118,6 @@ Removing the package and deleting user data are separate operations. These steps
 
 ## Limitations and verification scope
 
-Currently targets one Turing USB 5.2-inch display at 1280×720 landscape. On 2026-11-11, PyPI 0.1.0 passed a 75-second foreground hardware run: two real-account collections, USB output, and account rotation worked; the user confirmed the display and `NOT LIMITED` behavior. Scheduled tasks and long-duration stability still require acceptance; other models are outside this verification scope. See the [hardware test record](hardware-testing.md). A publishable device photo is not yet available.
+Currently targets one Turing USB 5.2-inch display at 1280×720 landscape. On 2026-11-11, PyPI 0.1.0 passed a 75-second foreground run with real collection, rotation and user-confirmed display/NOT LIMITED behavior; see the [hardware record](hardware-testing.md). Pre-release builds of 0.1.2 additionally passed [installed CLI acceptance](windows-installation-verification.md) for user-level pip, venv and uv tool. Logon/resume and long-duration stability remain unverified; other models are outside scope. A publishable device photo is not yet available.
 
 For development, see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md). Licensed under [GPL-3.0-or-later](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/LICENSE). [codex-auth](https://github.com/Loongphy/codex-auth) is an independent data source. AuxDisp is not an official OpenAI product.

@@ -66,7 +66,7 @@ auxdisp-codex-quota run --demo --headless latest.png --duration 60
 | `restart` | 停止后重新启动，重新加载配置 |
 | `uninstall-service` | 停止并注销本用户任务，保留配置和日志 |
 
-关闭终端后后台可继续运行；任务在当前用户登录时启动，不是开机即运行的系统服务。真实任务注册、登录/休眠恢复、电池行为和长期运行仍待系统验收。
+后台任务独立于启动它的终端，在当前用户登录时运行，不是开机即运行的系统服务。完整终端关闭、登录/休眠恢复、电池行为和长期运行仍待系统验收。
 
 更新时先停止，升级同一 Python 环境中的包，再启动：
 
@@ -118,6 +118,6 @@ pip uninstall auxdisp-codex-quota
 
 ## 限制与验证范围
 
-目前仅面向一块 Turing USB 5.2 英寸屏幕，横屏 1280×720。2026-11-11 已验证 PyPI 0.1.0 的 75 秒实机前台运行：两轮真实账户采集、USB 输出及账户轮播正常，用户确认显示和 `NOT LIMITED` 正常。后台计划任务和长期稳定性仍待验收；其他型号不在此验证范围。详见 [实机测试记录](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/hardware-testing.md)。暂无可公开使用的实机照片。
+目前仅面向一块 Turing USB 5.2 英寸屏幕，横屏 1280×720。2026-11-11 已验证 PyPI 0.1.0 的 75 秒实机前台运行：真实账户采集、轮播、显示和 `NOT LIMITED` 正常，详见 [实机记录](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/hardware-testing.md)。0.1.2 发布前构建另已完成用户级 pip、venv 和 uv tool 的 [后台安装验证](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/windows-installation-verification.md)。登录/休眠恢复及长期稳定性仍待验收，其他型号不在验证范围。暂无可公开使用的实机照片。
 
 开发见 [本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。许可证为 [GPL-3.0-or-later](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/LICENSE)。 [codex-auth](https://github.com/Loongphy/codex-auth) 是独立数据源项目。AuxDisp 不是 OpenAI 官方产品。

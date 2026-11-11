@@ -48,9 +48,15 @@ auxdisp-codex-quota run
 
 ## Windows 后台启动失败或停止后又启动
 
+安全软件拦截或旧版 `could not complete` 报错的诊断边界、Direct COM 可行性及当前验证限制，见 [Windows 后台安全拦截验证报告](windows-background-validation.md)。当前源码新增进程创建、超时、响应解析和 COM HRESULT 分类；旧版通用错误不能直接证明 Windows 策略或权限问题。已知被拦截时不要反复执行同一命令；由管理员核查关联事件与授权。
+
 检查 `status` 的 `registered`、`enabled` 和 `process_running`。注册失败时检查 Task Scheduler 是否可用、当前用户任务权限及系统策略；应用不自动提权。确认任务使用的 Python 环境仍存在且具备 `pythonw.exe`，以及 codex-auth 路径可解析。升级或迁移安装后运行 `start` 更新关联。
 
 正常停止请用 `auxdisp-codex-quota stop`，它会先禁用登录启动和崩溃重试；仅关闭终端或手动终止进程不同于 stop。`restart` 会重新启用并启动。需要移除任务请用 `uninstall-service`，再卸载包。诊断和超时停止行为见 [后台运行](background.md).
+
+## 用户级 pip 安装后后台进程立即退出
+
+0.1.1 及更早版本的后台 `-I` 参数禁用用户级 `site-packages`，因此 CLI 可用但后台找不到模块，甚至来不及创建新日志。可用 `python -m pip show auxdisp-codex-quota` 查看安装位置。0.1.2 已改用 `-E -P` 修复；旧发行版请使用虚拟环境或 uv 工具环境。无需重装 Python。安装包含修复的版本后运行 `start` / `restart` 更新现有任务。详见 [后台运行](background.md)。
 
 ## 任务所有权错误
 

@@ -2,6 +2,13 @@
 
 [English version](../en/CHANGELOG.md)
 
+### 0.1.2
+
+- 运行时完全改用 Python Direct COM，移除 PowerShell Bridge 和编码命令，不提供自动回退；保留旧任务的身份与参数兼容。
+- 后台使用 -E -P 支持标准 pip --user 安装，同时排除当前目录和 PYTHONPATH；Windows 依赖为 pywin32>=311。
+- 加固禁用注册、验证后激活、失败快照恢复和明确残留/未知状态报告，并修复 Windows 省略默认 Enabled XML 节点的恢复问题。
+- 增加安全错误分类、真实任务失败恢复验证，以及 wheel/venv、uv tool、标准用户级 pip 的真实 CLI 安装验证。
+
 ### 0.1.1
 
 - 修复 Task Scheduler 将当前用户表示为用户名时误报所有权不匹配：先解析 SID，再校验身份；解析失败仍拒绝管理。

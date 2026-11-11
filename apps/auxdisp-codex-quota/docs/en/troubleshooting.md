@@ -48,9 +48,15 @@ This means no usable data for that window, not an exhausted quota. Windows are m
 
 ## Background startup fails or unexpected restart
 
+See the [Windows background security validation report](windows-background-validation.md) for safe diagnostics, Direct COM feasibility and remaining limitations. Current source distinguishes process creation, timeout, response parsing and COM HRESULT failures; the old generic message does not prove a Windows policy or permission problem. Do not repeatedly invoke a known-blocked command; ask the administrator to correlate events and authorization.
+
 Inspect `registered`, `enabled`, and `process_running` in `status`. For registration failures, check Task Scheduler availability, current-user task permissions, and policy; the app does not elevate. Ensure the task’s Python environment still exists with `pythonw.exe`, and codex-auth resolves. Run `start` after upgrades or environment migration to reconcile the task.
 
 Use `auxdisp-codex-quota stop`: it disables logon startup and crash retries first. Closing a terminal or killing the process is different from stop. `restart` enables and launches it again. Use `uninstall-service` before uninstalling the package. For diagnostics and stop deadlines, see [background operation](background.md).
+
+## Background exits immediately after a user-level pip installation
+
+Background tasks in versions through 0.1.1 use `-I`, hiding user-site packages. The CLI can work while the background process cannot import the application, even before new logs are initialized. Check the installation location with `python -m pip show auxdisp-codex-quota`. Version 0.1.2 fixes this using `-E -P`. Use a virtual environment or uv tool environment with older releases; reinstalling Python is unnecessary. Once a fixed version is installed, run `start` / `restart` to update the existing task. See [background operation](background.md).
 
 ## Task ownership errors
 

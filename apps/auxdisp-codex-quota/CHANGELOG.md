@@ -2,6 +2,11 @@
 
 [English version](docs/en/CHANGELOG.md)
 
+### 0.1.2
+
+- 修复用户级 pip 后台导入，加固任务生命周期、失败恢复与安全诊断。
+- 完全移除运行时 PowerShell 后端，使用单一 Direct COM 后端；实现与正式安装路径验收见[安装验证记录](docs/zh/windows-installation-verification.md)。
+
 ### 0.1.1
 
 - 修复 Windows Task Scheduler 用户名与 SID 表示差异导致的所有权误判；解析失败仍拒绝管理任务。

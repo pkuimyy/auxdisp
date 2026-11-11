@@ -2,6 +2,13 @@
 
 [中文版](../zh/CHANGELOG.md)
 
+### 0.1.2
+
+- Use Python Direct COM as the sole runtime backend; remove the PowerShell Bridge/encoded commands with no automatic fallback, while retaining legacy task identity/argument compatibility.
+- Use -E -P for standard pip --user startup while excluding the working directory and PYTHONPATH; require pywin32>=311 only on Windows.
+- Harden disabled registration, verified activation, snapshot compensation and explicit residual/unknown-state reporting; restore snapshots whose default Enabled XML node Windows omits.
+- Add safe error classification, native failure-recovery acceptance and real CLI installation checks for wheel/venv, uv tool and standard user-level pip.
+
 ### 0.1.1
 
 - Resolve Task Scheduler principal names to SIDs before ownership comparison, accepting equivalent current-user names while rejecting unresolved identities.

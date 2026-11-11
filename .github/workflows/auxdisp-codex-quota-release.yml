@@ -115,17 +115,19 @@ jobs:
 
           Install: \`pip install auxdisp-codex-quota==$RELEASE_VERSION\`
 
-          - Normalize Windows Task Scheduler principal names to SIDs before ownership comparison; unresolved identities remain rejected.
-          - Preserve task marker/action checks and distinguish identity, marker, and action errors.
+          - Use Python Direct COM as the only Task Scheduler backend, with no PowerShell execution or automatic fallback.
+          - Support standard pip user installations and preserve SID, marker, action checks, and legacy task migration.
+          - Register disabled, verify before activation, and report restored, residual, or unknown state after startup failures.
           - Read-only multi-account Codex quota collection, historical snapshots, and account rotation.
           - Compact 1280x720 TUI, offline previews, and USB reconnection.
           - Current-user Windows background tasks with start/stop/status/restart/run/uninstall-service commands.
           - Per-user configuration, rotating logs, single-instance protection, and graceful shutdown.
 
-          Validation includes automated tests, offline wheel installation checks, and local Windows temporary-task lifecycle acceptance. A 75-second physical USB foreground run was verified with 0.1.0. Logon/resume behavior and long-duration operation remain unverified. Resource balances currently display N/A.
+          Validation includes automated tests and local real-CLI lifecycle checks for wheel/venv, uv tool, and standard pip user installations. A 75-second physical USB foreground run was verified with 0.1.0. Logon/resume behavior and long-duration operation remain unverified. Resource balances currently display N/A.
 
           [Changelog](https://github.com/$GH_REPO/blob/$RELEASE_TAG/apps/auxdisp-codex-quota/docs/en/CHANGELOG.md)
           [Hardware and Windows acceptance scope](https://github.com/$GH_REPO/blob/$RELEASE_TAG/apps/auxdisp-codex-quota/docs/en/hardware-testing.md)
+          [Installed CLI verification](https://github.com/$GH_REPO/blob/$RELEASE_TAG/apps/auxdisp-codex-quota/docs/en/windows-installation-verification.md)
           EOF
           gh release create "$RELEASE_TAG" dist/*.whl dist/*.tar.gz \
             --verify-tag --title "auxdisp-codex-quota $RELEASE_VERSION" \

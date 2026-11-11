@@ -6,5 +6,6 @@
 - [Windows 后台运行、日志、更新与卸载](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/background.md)
 - [故障排查](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/troubleshooting.md)
 - [实机测试记录与未验证范围](hardware-testing.md)
+- [Direct COM 与安装路径验证](windows-installation-verification.md)
 - [更新日志](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/CHANGELOG.md)
 - [维护者发布说明](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/releases.md)

@@ -14,7 +14,13 @@ auxdisp-codex-quota stop
 auxdisp-codex-quota restart
 ```
 
-Package installation only installs Python code and the CLI. The first `start` registers and launches `auxdisp-codex-quota-<current user SID>`. Its action uses the absolute installed `pythonw.exe` path and the package's internal entry point in isolated mode. It needs no source checkout, uv cache, or open PowerShell window.
+Package installation only installs Python code and the CLI. The first `start` registers and launches `auxdisp-codex-quota-<current user SID>`. Its action uses the absolute installed `pythonw.exe` path and the package's internal entry point. It needs no source checkout, uv cache, or open PowerShell window.
+
+Since 0.1.2, the app uses Python Direct COM as its only task backend, without launching PowerShell, encoded commands or a fallback backend. Windows installs pywin32; access denial is reported without switching paths. Real CLI lifecycles have been checked locally for standard pip --user, venv and uv tool installations; see the [installation verification record](windows-installation-verification.md). Version 0.1.1 does not include these fixes.
+
+Since 0.1.2, background tasks use `-E -P -m auxdisp_codex_quota._background`: interpreter environment variables such as `PYTHONPATH` are ignored and the working directory is excluded from module search, while standard user-site packages remain available to load the application and its dependencies. The user site, including its `.pth` files and customization modules, remains a trusted part of the Python installation; this is not full `-I` isolation. Global, standard `pip --user`, and virtual-environment installations are supported; keep the chosen interpreter environment available.
+
+Versions through 0.1.1 use `-I`, which hides user-site packages; use a virtual environment or uv tool environment for background operation with those releases. After installing a version containing the fix, `start` or `restart` updates the existing task arguments without deleting the task. Legacy arguments still undergo the full ownership checks.
 
 The task runs only while the current user is logged in and starts at logon, without administrator privileges or automatic elevation. If Windows policy denies task registration, the command returns an actionable error instead of elevating.
 
@@ -96,8 +102,10 @@ pip uninstall auxdisp-codex-quota
 
 ## Verification boundary
 
+Source now uses a single Direct COM backend. See the [lifecycle hardening report](windows-lifecycle-hardening.md) for transitions/history and the [installation verification record](windows-installation-verification.md) for current acceptance. A failed/unavailable rollback and unknown final state do not establish cleanup.
+
 On 2026-11-11, PyPI 0.1.0 was verified in a foreground run on a physical screen and with a read-only `status` query. See the [hardware test record](hardware-testing.md). No real background task was registered in this run.
 
-Automated tests use a fake scheduler, synthetic collection, and virtual output to cover first/repeated start, disabled-stop behavior, restart, interpreter migration, denied policy, forced-stop fallback, stale state, and removal. Windows tests additionally verify real cross-process mutex/Event behavior, PowerShell syntax, and native COM task XML parsing, without registering a task.
+Automated tests use mocked COM, synthetic collection and virtual output for repeated start, lifecycle, interpreter migration, access denial, timeout, compensation and removal, and check that installed runtime code has no old backend. Native task writes require explicit authorization. Installation acceptance uses real CLI entry points, refuses existing tasks/instances and restores profile state after cleaning up test tasks.
 
-Real task registration, surviving terminal closure, logon, sleep/battery behavior, scheduler crash recovery, long-duration operation, and physical USB unplug/replug require separate system/hardware acceptance. Automated success does not mark those scenarios passed.
+Basic native task lifecycles and installation paths are covered above. Full terminal closure, logon, sleep/battery behavior, actual crash retries, long-duration operation and manual USB unplug/replug still require separate acceptance; short or automated checks do not establish those outcomes.
