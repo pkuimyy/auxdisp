@@ -2,6 +2,11 @@
 
 [English version](docs/en/CHANGELOG.md)
 
+### 0.1.1
+
+- 修复 Windows Task Scheduler 用户名与 SID 表示差异导致的所有权误判；解析失败仍拒绝管理任务。
+- 增加可诊断错误、身份解析回归测试及真实临时任务启停验收。完整变更见[中文记录](docs/zh/CHANGELOG.md)。
+
 ### 0.1.0
 
 - 增加当前用户 Windows 后台计划任务、CLI 生命周期、单实例互斥锁与正常停止。

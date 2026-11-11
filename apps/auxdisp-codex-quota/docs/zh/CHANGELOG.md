@@ -2,6 +2,12 @@
 
 [English version](../en/CHANGELOG.md)
 
+### 0.1.1
+
+- 修复 Task Scheduler 将当前用户表示为用户名时误报所有权不匹配：先解析 SID，再校验身份；解析失败仍拒绝管理。
+- 区分身份解析失败、身份不匹配、管理标记不匹配及动作不匹配错误，保留全部任务安全检查。
+- 增加原生 Windows 身份解析回归测试，以及显式启用的真实临时任务生命周期测试。
+
 ### 0.1.0
 
 - 增加当前用户 Windows 计划任务与 start/stop/status/restart/run/uninstall-service 命令。

@@ -97,6 +97,31 @@ function Error-Code($exception) {
     while ($null -ne $exception.InnerException) { $exception = $exception.InnerException }
     return ($exception.HResult -band 0xffffffffL)
 }
+function Get-TaskOwnershipError($definition, [string]$sid, [string]$marker) {
+    # COM may return a SID, local username, or DOMAIN\username for the same user.
+    # Never fall back to comparing names if Windows cannot resolve the identity.
+    try {
+        $identity = [string]$definition.Principal.UserId
+        if ([string]::IsNullOrWhiteSpace($identity)) { return 'TASK_IDENTITY_UNRESOLVED' }
+        if ($identity.StartsWith('S-', [StringComparison]::OrdinalIgnoreCase)) {
+            $principalSid = [System.Security.Principal.SecurityIdentifier]::new($identity).Value
+        } else {
+            $account = [System.Security.Principal.NTAccount]::new($identity)
+            $principalSid = $account.Translate([System.Security.Principal.SecurityIdentifier]).Value
+        }
+    } catch { return 'TASK_IDENTITY_UNRESOLVED' }
+    if ($principalSid -ne $sid) { return 'TASK_IDENTITY_MISMATCH' }
+    $description = [string]$definition.RegistrationInfo.Description
+    if (-not $description.StartsWith($marker + ' ', [StringComparison]::Ordinal)) {
+        return 'TASK_MARKER_MISMATCH'
+    }
+    if ($definition.Actions.Count -ne 1) { return 'TASK_ACTION_MISMATCH' }
+    $arguments = [string]$definition.Actions.Item(1).Arguments
+    if (-not $arguments.StartsWith('-I -m auxdisp_codex_quota._background ', [StringComparison]::Ordinal)) {
+        return 'TASK_ACTION_MISMATCH'
+    }
+    return $null
+}
 try {
     $request = [Console]::In.ReadToEnd() | ConvertFrom-Json
     $scheduler = New-Object -ComObject 'Schedule.Service'
@@ -111,11 +136,9 @@ try {
     # Refuse to modify an unrelated task even if its name collides.
     if ($null -ne $task) {
         $definition = $task.Definition
-        if ($definition.Principal.UserId -ne $request.sid -or
-            -not $definition.RegistrationInfo.Description.StartsWith($request.marker + ' ') -or
-            $definition.Actions.Count -ne 1 -or
-            -not $definition.Actions.Item(1).Arguments.StartsWith('-I -m auxdisp_codex_quota._background ')) {
-            [Console]::Write('{"error":"TASK_OWNERSHIP_MISMATCH"}')
+        $ownershipError = Get-TaskOwnershipError $definition $request.sid $request.marker
+        if ($null -ne $ownershipError) {
+            [Console]::Write((@{error=$ownershipError} | ConvertTo-Json -Compress))
             exit 1
         }
     }
@@ -167,6 +190,15 @@ class TaskScheduler:
             if not isinstance(response, dict):
                 raise ValueError("Invalid bridge response")
             if result.returncode or "error" in response:
+                ownership_errors = {
+                    "TASK_IDENTITY_UNRESOLVED": "Task principal could not be resolved to a SID",
+                    "TASK_IDENTITY_MISMATCH": "Task principal belongs to a different Windows user",
+                    "TASK_MARKER_MISMATCH": "Task description does not contain the expected management marker",
+                    "TASK_ACTION_MISMATCH": "Task actions do not match the managed background entry point",
+                }
+                error = response.get("error")
+                if error in ownership_errors:
+                    raise ServiceError(f"{error}: {ownership_errors[error]}; no changes made")
                 if response.get("error") == "TASK_OWNERSHIP_MISMATCH":
                     raise ServiceError("Task name is occupied by an unmanaged task; no changes made")
                 raise ServiceError(

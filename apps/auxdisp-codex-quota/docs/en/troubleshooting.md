@@ -25,7 +25,7 @@ Under the same Windows user running this app, follow [codex-auth](https://github
 
 Check the Turing USB 5.2-inch model, VID `0x1CBE` / PID `0x0050`, and a data-capable cable. Other models are outside application support. Inspect the device and compatible interface driver in Windows Device Manager. `libusb-package` is a user-space library; successful installation does not establish correct Windows interface binding or access. `process_running=true` alone does not prove USB access.
 
-See [supported devices](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md). Device-free tests do not establish physical USB acceptance.
+See [supported devices](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/en/supported-devices.md). Completed USB checks and remaining scenarios are listed in the [hardware test record](hardware-testing.md).
 
 ## Connected but blank
 
@@ -51,6 +51,19 @@ This means no usable data for that window, not an exhausted quota. Windows are m
 Inspect `registered`, `enabled`, and `process_running` in `status`. For registration failures, check Task Scheduler availability, current-user task permissions, and policy; the app does not elevate. Ensure the task’s Python environment still exists with `pythonw.exe`, and codex-auth resolves. Run `start` after upgrades or environment migration to reconcile the task.
 
 Use `auxdisp-codex-quota stop`: it disables logon startup and crash retries first. Closing a terminal or killing the process is different from stop. `restart` enables and launches it again. Use `uninstall-service` before uninstalling the package. For diagnostics and stop deadlines, see [background operation](background.md).
+
+## Task ownership errors
+
+Since 0.1.1, the app resolves Task Scheduler's `Principal.UserId` (SID, local username, or `DOMAIN\username`) to a SID through Windows identity APIs before comparing it with the current user. A matching task name or valid Description alone never establishes ownership. Older `TASK_OWNERSHIP_MISMATCH` errors may result from equivalent username/SID representations; the fix does not require deleting existing tasks.
+
+| Error | Meaning |
+|---|---|
+| `TASK_IDENTITY_UNRESOLVED` | Windows cannot resolve the principal, or it is empty/invalid; management denied |
+| `TASK_IDENTITY_MISMATCH` | Resolved SID belongs to another user; management denied |
+| `TASK_MARKER_MISMATCH` | Description lacks the expected management marker; management denied |
+| `TASK_ACTION_MISMATCH` | Actions do not contain exactly the expected background launch action; management denied |
+
+Inspect the principal, Description, and arguments in Task Scheduler without changing the task. Do not delete tasks or bypass checks to hide the error. Retry with an installation containing the fix and report redacted error codes if it persists. See the [hardware test record](hardware-testing.md) for verification scope.
 
 ## Report a problem
 

@@ -2,6 +2,12 @@
 
 [中文版](../zh/CHANGELOG.md)
 
+### 0.1.1
+
+- Resolve Task Scheduler principal names to SIDs before ownership comparison, accepting equivalent current-user names while rejecting unresolved identities.
+- Distinguish identity resolution, identity mismatch, management marker, and action errors while retaining every task safety check.
+- Add native Windows identity regression tests and an opt-in real temporary-task lifecycle test.
+
 ### 0.1.0
 
 - Add current-user Windows scheduled tasks and start/stop/status/restart/run/uninstall-service commands.

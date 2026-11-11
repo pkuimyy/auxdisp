@@ -29,7 +29,7 @@
 
 ## 安装
 
-0.1.0 已发布到 [PyPI](https://pypi.org/project/auxdisp-codex-quota/):
+安装包通过 [PyPI](https://pypi.org/project/auxdisp-codex-quota/) 发布：
 
 ```powershell
 pip install auxdisp-codex-quota
@@ -118,6 +118,6 @@ pip uninstall auxdisp-codex-quota
 
 ## 限制与验证范围
 
-目前仅面向一块 Turing USB 5.2 英寸屏幕，横屏 1280×720。其他驱动型号的存在不代表本应用支持它们。真实账户的两轮采集和虚拟 PNG 输出已验证；这不等于 USB 实机、后台计划任务或长期稳定性验收。暂无可公开使用的实机照片。
+目前仅面向一块 Turing USB 5.2 英寸屏幕，横屏 1280×720。2026-11-11 已验证 PyPI 0.1.0 的 75 秒实机前台运行：两轮真实账户采集、USB 输出及账户轮播正常，用户确认显示和 `NOT LIMITED` 正常。后台计划任务和长期稳定性仍待验收；其他型号不在此验证范围。详见 [实机测试记录](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/hardware-testing.md)。暂无可公开使用的实机照片。
 
 开发见 [本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。许可证为 [GPL-3.0-or-later](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/LICENSE)。 [codex-auth](https://github.com/Loongphy/codex-auth) 是独立数据源项目。AuxDisp 不是 OpenAI 官方产品。

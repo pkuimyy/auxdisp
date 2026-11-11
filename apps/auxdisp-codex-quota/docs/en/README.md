@@ -29,7 +29,7 @@ The app only runs `codex-auth list --api --json`. It does not automatically swit
 
 ## Installation
 
-Version 0.1.0 is available on [PyPI](https://pypi.org/project/auxdisp-codex-quota/):
+Packages are published on [PyPI](https://pypi.org/project/auxdisp-codex-quota/):
 
 ```powershell
 pip install auxdisp-codex-quota
@@ -118,6 +118,6 @@ Removing the package and deleting user data are separate operations. These steps
 
 ## Limitations and verification scope
 
-Currently targets one Turing USB 5.2-inch display at 1280×720 landscape. Other driver models do not imply application support. Two real-account collections with virtual PNG output have been checked; this does not establish physical USB, scheduled-task, or long-duration acceptance. A publishable device photo is not yet available.
+Currently targets one Turing USB 5.2-inch display at 1280×720 landscape. On 2026-11-11, PyPI 0.1.0 passed a 75-second foreground hardware run: two real-account collections, USB output, and account rotation worked; the user confirmed the display and `NOT LIMITED` behavior. Scheduled tasks and long-duration stability still require acceptance; other models are outside this verification scope. See the [hardware test record](hardware-testing.md). A publishable device photo is not yet available.
 
 For development, see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md). Licensed under [GPL-3.0-or-later](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/LICENSE). [codex-auth](https://github.com/Loongphy/codex-auth) is an independent data source. AuxDisp is not an official OpenAI product.

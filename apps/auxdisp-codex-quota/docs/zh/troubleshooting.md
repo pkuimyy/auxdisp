@@ -25,7 +25,7 @@ codex-auth list --api --json
 
 核对 Turing USB 5.2 英寸、VID `0x1CBE` / PID `0x0050` 和数据线；同品牌其他型号不属于应用支持范围。用 Windows 设备管理器检查设备和兼容接口驱动。`libusb-package` 是用户态库，安装成功不代表 Windows 接口驱动或访问权限已正确配置。不要仅凭 `process_running=true` 判断 USB 可用。
 
-更多设备信息见 [支持设备](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)。本轮无设备测试不能代替 USB 实机验收。
+更多设备信息见 [支持设备](https://github.com/pkuimyy/auxdisp/blob/main/packages/auxdisp-driver/docs/zh/supported-devices.md)。已完成的 USB 实测及未验证场景见 [实机测试记录](hardware-testing.md)。
 
 ## 连接正常但没有画面
 
@@ -51,6 +51,19 @@ auxdisp-codex-quota run
 检查 `status` 的 `registered`、`enabled` 和 `process_running`。注册失败时检查 Task Scheduler 是否可用、当前用户任务权限及系统策略；应用不自动提权。确认任务使用的 Python 环境仍存在且具备 `pythonw.exe`，以及 codex-auth 路径可解析。升级或迁移安装后运行 `start` 更新关联。
 
 正常停止请用 `auxdisp-codex-quota stop`，它会先禁用登录启动和崩溃重试；仅关闭终端或手动终止进程不同于 stop。`restart` 会重新启用并启动。需要移除任务请用 `uninstall-service`，再卸载包。诊断和超时停止行为见 [后台运行](background.md).
+
+## 任务所有权错误
+
+从 0.1.1 起，程序将 Task Scheduler 的 `Principal.UserId`（SID、本地用户名或 `DOMAIN\username`）通过 Windows 身份 API 规范化为 SID，再与当前用户 SID 比较。不会仅凭同名任务或合法 Description 接管任务。旧版 `TASK_OWNERSHIP_MISMATCH` 可能由同一用户的用户名/SID 表示差异触发；修复不需要删除已有任务。
+
+| 错误 | 含义 |
+|---|---|
+| `TASK_IDENTITY_UNRESOLVED` | Windows 无法解析任务身份，或身份为空/无效；拒绝管理 |
+| `TASK_IDENTITY_MISMATCH` | 解析出的 SID 属于其他用户；拒绝管理 |
+| `TASK_MARKER_MISMATCH` | Description 不包含预期管理标记；拒绝管理 |
+| `TASK_ACTION_MISMATCH` | 动作不是唯一的预期后台启动动作；拒绝管理 |
+
+在任务计划程序中只读检查任务身份、Description 和启动参数；不要通过删除任务或绕过检查来掩盖问题。使用包含修复的安装版本后重试；仍失败时附脱敏错误码。验收范围见 [实机测试记录](hardware-testing.md)。
 
 ## 提交问题
 

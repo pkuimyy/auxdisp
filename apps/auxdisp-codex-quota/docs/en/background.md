@@ -96,6 +96,8 @@ pip uninstall auxdisp-codex-quota
 
 ## Verification boundary
 
+On 2026-11-11, PyPI 0.1.0 was verified in a foreground run on a physical screen and with a read-only `status` query. See the [hardware test record](hardware-testing.md). No real background task was registered in this run.
+
 Automated tests use a fake scheduler, synthetic collection, and virtual output to cover first/repeated start, disabled-stop behavior, restart, interpreter migration, denied policy, forced-stop fallback, stale state, and removal. Windows tests additionally verify real cross-process mutex/Event behavior, PowerShell syntax, and native COM task XML parsing, without registering a task.
 
 Real task registration, surviving terminal closure, logon, sleep/battery behavior, scheduler crash recovery, long-duration operation, and physical USB unplug/replug require separate system/hardware acceptance. Automated success does not mark those scenarios passed.
