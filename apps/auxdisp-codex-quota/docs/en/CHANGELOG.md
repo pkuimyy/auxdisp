@@ -2,6 +2,11 @@
 
 [中文版](../zh/CHANGELOG.md)
 
+### 0.1.3
+
+- Streamline user documentation; remove local acceptance and migration reports from public docs and source distributions.
+- Align Chinese and English navigation, support boundaries and release-note links; runtime behavior is unchanged.
+
 ### 0.1.2
 
 - Use Python Direct COM as the sole runtime backend; remove the PowerShell Bridge/encoded commands with no automatic fallback, while retaining legacy task identity/argument compatibility.
