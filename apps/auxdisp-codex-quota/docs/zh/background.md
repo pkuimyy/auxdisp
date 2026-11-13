@@ -68,13 +68,13 @@ executable = 'C:\Tools\codex-auth.exe'
 
 `service.log` 每个文件最多 1 MiB，保留 3 个备份。日志和状态不保存认证令牌、原始账户 JSON、邮箱或账户名称。状态只保存实例标识、进程号、健康心跳、最近成功采集时间和最近观察到的 USB 连接状态；进程号仅供诊断，不用于终止进程。
 
-`status` 输出 JSON，分别报告 `registered`、`enabled`、`process_running`、`usb_connected` 和 `last_success_at`。存活判断依赖跨进程命名互斥锁，不根据 PID 文件判断。健康记录超过 10 秒或进程未运行时，USB 状态为 `null`，表示未知；`true/false` 是最近一次传输观察结果，不代表持续进行硬件探测。前台 headless 输出的 USB 状态也为 `null`。
+`status` 默认显示易读状态；`status --json` 输出 JSON，分别报告 `registered`、`enabled`、`process_running`、`usb_connected` 和 `last_success_at`。存活判断依赖跨进程命名互斥锁，不根据 PID 文件判断。健康记录超过 10 秒或进程未运行时，USB 状态为 `null`，表示未知；`true/false` 是最近一次传输观察结果，不代表持续进行硬件探测。
 
 ## 停止与恢复
 
-`stop` 先禁用任务，阻止登录启动及崩溃重试，然后发送当前用户专属停止 Event。主循环停止请求采集，取消正在执行的采集子进程树，等待显示线程释放资源后退出。没有运行实例时可安全重复执行。
+`stop` 先禁用任务，阻止登录启动及崩溃重试，然后发送当前用户专属停止 Event。主循环停止请求采集，取消正在执行的采集子进程树，等待显示线程清屏、将亮度归零并释放资源后退出。Ctrl+C 和卸载任务使用相同的退出清理；重启时恢复配置亮度。没有连接设备时不重新连接来熄屏，没有运行实例时可安全重复执行。
 
-正常退出等待上限为 30 秒；超时后只允许 Task Scheduler 终止这个受管理的任务，再等待 5 秒确认退出。命令会明确报告强制停止，并写入 `state/last-stop.json`。不会根据任意 PID 终止 Python 或 Codex 进程；没有对应计划任务的挂起前台实例无法通过此回退强杀。
+正常退出等待上限为 30 秒；超时后只允许 Task Scheduler 终止这个受管理的任务，再等待 5 秒确认退出。命令会明确报告强制停止，并写入 `state/last-stop.json`。熄屏失败不阻止设备释放和进程退出；强制终止、崩溃或 USB 断连不能保证熄屏。停止结果的 `screen_off` 区分 `succeeded`（清屏和零亮度命令成功返回）、`failed`、`not_attempted`、`unknown`，与 `forced`、`cleanup_complete` 分开记录。实际背光熄灭仍需实机确认，不能据进程退出推断。不会根据任意 PID 终止 Python 或 Codex 进程；没有对应计划任务的挂起前台实例无法通过此回退强杀。
 
 任务禁止并行实例和默认长期运行时限，允许电池供电，空闲状态结束不终止应用，并启用可用时补启动。进程异常退出时每隔 1 分钟重试，最多 3 次，避免快速无限崩溃循环。USB 拔出和 API 超时由既有重连与历史快照逻辑处理，不依赖重启进程。休眠恢复、实际任务重启行为仍需系统级验收。
 
@@ -83,12 +83,10 @@ executable = 'C:\Tools\codex-auth.exe'
 ```powershell
 auxdisp-codex-quota run
 auxdisp-codex-quota run --config C:\Users\Me\auxdisp-config.toml
-auxdisp-codex-quota run --demo --headless preview.png --duration 60
-auxdisp-codex-quota --preview preview.png
-auxdisp-codex-quota --inspect
+auxdisp-codex-quota preview
 ```
 
-无子命令仍兼容前台 `run`。Windows 前台与后台共享同一用户互斥锁，防止争用设备；预览和 `--inspect` 不启动显示实例。`--preview`、`--inspect`、`--demo`、`--fixture`、`--headless` 和 `--duration` 继续可用，不能与后台管理命令混用。
+无子命令仅显示帮助。Windows 前台与后台共享同一用户互斥锁，防止争用设备；前台运行前应先停止后台。`preview` 不启动显示实例，其输出路径与行为见[PNG 预览](usage.md#png-预览)。各子命令的参数使用 `<子命令> --help` 查看。
 
 卸载 Python 包前执行：
 

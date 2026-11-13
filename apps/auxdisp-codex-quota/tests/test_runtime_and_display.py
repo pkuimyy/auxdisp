@@ -2,7 +2,9 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from threading import Event
 import time
-from unittest.mock import Mock
+from unittest.mock import Mock, call
+
+import pytest
 
 from PIL import Image
 
@@ -152,3 +154,89 @@ def test_reconnect_worker_keeps_retrying_without_new_submissions():
     finally:
         output.close()
     device.close.assert_called_once()
+
+
+@pytest.mark.parametrize("clear_fails,brightness_fails", [(False, False), (True, False), (False, True), (True, True)])
+def test_shutdown_attempts_black_and_zero_brightness_then_releases(clear_fails, brightness_fails):
+    device = Mock(width=1280, height=720)
+    adapter = DisplayAdapter(opener=lambda: device)
+    assert adapter.send(Image.new("RGB", (1280, 720), "white"), "live", 0)
+    device.reset_mock()
+    if clear_fails:
+        device.show.side_effect = OSError("disconnected")
+    if brightness_fails:
+        device.set_brightness.side_effect = OSError("disconnected")
+    adapter.close()
+    assert device.method_calls[0][0] == "show"
+    black = device.show.call_args.args[0]
+    assert black.size == (1280, 720) and black.getbbox() is None
+    assert device.method_calls[1:] == [call.set_brightness(0), call.close()]
+    assert adapter.screen_off_result == ("failed" if clear_fails or brightness_fails else "succeeded")
+    adapter.close()
+    assert device.close.call_count == 1
+    assert not adapter.send(black, "late", 1)
+
+
+def test_disconnected_shutdown_does_not_open_device():
+    opener = Mock(side_effect=OSError("unplugged"))
+    adapter = DisplayAdapter(opener=opener)
+    adapter.close()
+    opener.assert_not_called()
+    assert adapter.screen_off_result == "not_attempted"
+
+
+def test_transfer_failure_only_releases_connection_then_reconnects():
+    broken, recovered = Mock(width=1280, height=720), Mock(width=1280, height=720)
+    broken.show.side_effect = OSError("transfer failed")
+    adapter = DisplayAdapter(reconnect_seconds=1, opener=Mock(side_effect=[broken, recovered]))
+    image = Image.new("RGB", (1280, 720), "white")
+    assert not adapter.send(image, "frame", 0)
+    broken.set_brightness.assert_not_called()
+    assert broken.show.call_count == 1
+    assert adapter.send(image, "frame", 1)
+    assert adapter.screen_off_result == "not_attempted"
+    adapter.close()
+    assert adapter.screen_off_result == "succeeded"
+
+
+def test_pending_frame_cannot_follow_shutdown_black_frame():
+    entered, release = Event(), Event()
+    device = Mock(width=1280, height=720)
+    seen = []
+
+    def show(image):
+        seen.append(image.getpixel((0, 0)))
+        if len(seen) == 1:
+            entered.set()
+            assert release.wait(3)
+
+    device.show.side_effect = show
+    output = DisplayWorker(DisplayAdapter(opener=lambda: device))
+    try:
+        output.submit(Image.new("RGB", (1280, 720), "white"), "first")
+        assert entered.wait(1)
+        output.submit(Image.new("RGB", (1280, 720), "red"), "pending")
+        # Set the stop state via the real close path while the first send is blocked.
+        from threading import Thread
+        closer = Thread(target=output.close)
+        closer.start()
+        assert output._stop.wait(1)
+        output.submit(Image.new("RGB", (1280, 720), "blue"), "late")
+        release.set()
+        closer.join(3)
+        assert not closer.is_alive()
+        assert seen == [(255, 255, 255), (0, 0, 0)]
+        assert output.screen_off_result == "succeeded"
+    finally:
+        release.set()
+        output.close()
+
+
+def test_open_turing_restores_configured_brightness(monkeypatch):
+    from auxdisp_codex_quota.display import open_turing
+
+    device = Mock(width=1280, height=720)
+    device.device.dev_pid = 0x0050
+    monkeypatch.setattr("auxdisp_driver.open_display", Mock(return_value=device))
+    assert open_turing(37) is device
+    device.set_brightness.assert_called_once_with(37)

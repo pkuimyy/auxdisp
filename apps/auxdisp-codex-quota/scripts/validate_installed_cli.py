@@ -52,7 +52,9 @@ def validate(cli, python, root, label):
         args = [str(cli), operation]
         if operation in ("start", "restart"):
             args.extend(["--config", str(config)])
-        if operation != "status":
+        if operation == "status":
+            args.append("--json")
+        else:
             touched = True
         result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace",
                                 timeout=100, creationflags=subprocess.CREATE_NO_WINDOW, cwd=root)
@@ -60,7 +62,7 @@ def validate(cli, python, root, label):
             blocked = any(code in result.stderr for code in ("ACCESS_DENIED", "PROCESS_START_FAILED", "PROCESS_CANCELLED"))
             # No raw stderr/paths enter the report.
             raise ServiceError(f"CLI_{operation.upper()}_FAILED exit_code={result.returncode} blocked={blocked}")
-        return json.loads(result.stdout)
+        return json.loads(result.stdout) if operation == "status" else call("status")
 
     def record(operation, result):
         safe = {key: result.get(key) for key in ("registered", "enabled", "process_running", "health_fresh", "phase")}

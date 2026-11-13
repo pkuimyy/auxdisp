@@ -36,7 +36,7 @@ auxdisp-codex-quota stop
 auxdisp-codex-quota run
 ```
 
-检查亮度是否为 0、是否使用横屏、是否有 USB unavailable / transfer failed 日志。`usb_connected` 是最近传输观察值；`null` 表示未知、未运行或健康心跳过期，不代表连接成功。前台 `run` 会使用真实账户和 USB，Ctrl+C 退出；与后台共享单实例锁，因此先停止后台。先尝试 `--preview preview.png` 可单独检查渲染。USB 断开会自动重试最新一帧。
+检查亮度是否为 0、是否使用横屏、是否有 USB unavailable / transfer failed 日志。`usb_connected` 是最近传输观察值；`null` 表示未知、未运行或健康心跳过期，不代表连接成功。前台 `run` 会使用真实账户和 USB，Ctrl+C 退出；与后台共享单实例锁，因此先停止后台。先尝试 `preview --output preview.png` 可单独检查渲染。USB 断开会自动重试最新一帧。
 
 ## API ERROR / STALE
 
@@ -75,4 +75,4 @@ auxdisp-codex-quota run
 
 ## 提交问题
 
-请附操作系统、Python 和两个包的版本、设备 VID/PID、执行命令、脱敏的 status 与日志。不要提交真实邮箱、账户名、account_key、认证文件、原始 --inspect / codex-auth JSON 或未脱敏截图。 [GitHub Issues](https://github.com/pkuimyy/auxdisp/issues).
+请附操作系统、Python 和两个包的版本、设备 VID/PID、执行命令、脱敏的 status 与日志。不要提交真实邮箱、账户名、account_key、认证文件、原始 codex-auth JSON 或未脱敏截图。 [GitHub Issues](https://github.com/pkuimyy/auxdisp/issues).

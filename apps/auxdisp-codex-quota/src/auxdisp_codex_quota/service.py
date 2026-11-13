@@ -159,6 +159,9 @@ class ServiceController:
         return self.scheduler.call(operation, **values)
 
     def _stop(self, transition):
+        was_busy = self._busy()
+        previous_state = read_state(self.paths.state)
+        previous_instance = previous_state.get("instance")
         # Disable first, including pending crash recovery and future logon triggers.
         if self.scheduler.query().get("registered"):
             self._call(transition, "disable")
@@ -181,7 +184,16 @@ class ServiceController:
             raise ServiceError("The managed task has not exited; it remains disabled")
         transition.stopped = True
         state = read_state(self.paths.state)
-        result = {"at": time.time(), "forced": forced, "cleanup_complete": state.get("cleanup_complete")}
+        confirmed = (was_busy and not forced and previous_instance is not None
+                     and previous_state.get("phase") == "running"
+                     and previous_instance == state.get("instance") and state.get("phase") == "stopped")
+        result = {
+            "at": time.time(), "forced": forced,
+            "cleanup_complete": state.get("cleanup_complete") if confirmed else None,
+            "screen_off": state.get("screen_off", "unknown") if confirmed else (
+                "unknown" if was_busy else "not_attempted"
+            ),
+        }
         write_state(self.paths.state.parent / "last-stop.json", result)
         return result
 

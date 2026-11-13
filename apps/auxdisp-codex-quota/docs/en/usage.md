@@ -67,10 +67,10 @@ This is an alternative example: merge fields into existing tables rather than re
 
 ## Explicit quota policies
 
-Inspect normalized data and stable `account_key` values without USB:
+Read stable `account_key` values directly from the data source without USB:
 
 ```powershell
-auxdisp-codex-quota --inspect
+codex-auth list --api --json
 ```
 
 Output contains account identities; do not share it publicly. Only if you have an explicit basis for an account having no 5-hour limit, configure its complete stable ID:
@@ -82,22 +82,19 @@ unlimited_windows = [300]
 
 Policies match stable IDs and accept 300 / 10080 minutes. Unlimited quotas are not inferred from email suffixes, `secondary=null`, or missing windows. Missing data displays `DATA UNAVAILABLE`, not zero.
 
-## Offline and headless operation
+## PNG preview
 
 ```powershell
-auxdisp-codex-quota --preview dual.png
-auxdisp-codex-quota --preview weekly.png --account-index 1
-auxdisp-codex-quota --preview error.png --simulate-error
-auxdisp-codex-quota run --demo --headless latest.png --duration 60
+auxdisp-codex-quota preview
+auxdisp-codex-quota preview --output .\images\preview.png
+auxdisp-codex-quota preview --config .\settings.toml
 ```
 
-These commands use synthetic accounts without real-account or USB access. `--account-index` is zero-based. `--fixture <JSON path>` accepts custom schema-1 data.
+`preview` uses bundled synthetic accounts to generate a 1280×720 PNG. It never invokes codex-auth, USB, background tasks, or a browser. It selects the first synthetic account and first card page, using the generation time for the clock and countdowns.
 
-```powershell
-auxdisp-codex-quota run --headless real-accounts.png --duration 65
-```
+The default output is `auxdisp-codex-quota-preview.png` in the command's current directory. `--output` accepts a relative or absolute file path and creates parent directories as needed. Existing files are replaced; write failures return a nonzero exit code and preserve the original file. Completion output identifies the synthetic data and the absolute output path.
 
-**This command reads real accounts**, replacing only USB output with PNG. Images may contain names or emails; redact before sharing. Add `--demo` for fully offline operation. `--duration` bounds the run; otherwise use Ctrl+C.
+`--config` selects rendering settings; otherwise the normal user-configuration and built-in-default priority applies. Collection commands, brightness, and USB settings do not affect offline preview. Fixtures, error simulation, and continuous PNG output belong to the developer tools; see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md).
 
 ## Data source and boundaries
 

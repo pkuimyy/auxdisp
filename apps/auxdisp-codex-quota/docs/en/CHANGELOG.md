@@ -2,6 +2,14 @@
 
 [中文版](../zh/CHANGELOG.md)
 
+### 0.1.4
+
+- Display reset-card counts and per-card status, expiry time, and time remaining; rotate card pages independently and label account and card-page counters explicitly.
+- Add quota reset countdowns and remove the CREDITS placeholder from the screen.
+- Clear the screen and set brightness to zero on normal stop or foreground Ctrl+C; restore configured brightness on startup and report failed or unconfirmed screen-off separately.
+- Use explicit CLI subcommands and show help without arguments. `status` now prints readable text; use `status --json` for structured output.
+- Generate synthetic PNGs with `preview`, defaulting to `auxdisp-codex-quota-preview.png` in the current directory, with `--output` support. Move developer options out of the public CLI into a source script.
+
 ### 0.1.3
 
 - Streamline user documentation; remove local acceptance and migration reports from public docs and source distributions.

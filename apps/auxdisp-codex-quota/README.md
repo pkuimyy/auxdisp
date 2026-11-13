@@ -15,7 +15,7 @@
 - 多个账户自动轮播，默认每 15 秒切换；每 60 秒调用一次只读采集。
 - 5 小时 / 7 天剩余额度百分比、10 格进度条、重置时间和固定日期时钟。
 - 整体或单账户采集失败时保留历史数据，显示 API ERROR / STALE；USB 自动重连。
-- Windows 当前用户后台任务、单实例与 CLI 启停；无需设备的离线预览与 PNG 输出。
+- Windows 当前用户后台任务、单实例与 CLI 启停；无需设备的合成数据 PNG 预览。
 
 应用只运行 `codex-auth list --api --json`，不自动切换账户、消耗 Reset Cards、购买额度或修改认证信息，也不读取或保存认证令牌。codex-auth 的缓存与认证管理由该独立工具负责。
 
@@ -45,16 +45,15 @@ auxdisp-codex-quota status
 auxdisp-codex-quota stop
 ```
 
-首次 `start` 注册并启动当前用户任务。配置未创建时使用默认值：亮度 30%、15 秒轮播、60 秒采集。`status` 返回 JSON；`process_running` 与 `usb_connected` 分开报告，进程运行不等于屏幕已连接。
+首次 `start` 注册并启动当前用户任务。配置未创建时使用默认值：亮度 30%、15 秒轮播、60 秒采集。`status` 显示易读状态，`status --json` 提供结构化输出；进程运行和 USB 连接分别报告，进程运行不等于屏幕已连接。
 
-没有设备时可先生成合成数据预览，或运行 60 秒离线轮播：
+没有设备时可生成合成数据预览：
 
 ```powershell
-auxdisp-codex-quota --preview preview.png
-auxdisp-codex-quota run --demo --headless latest.png --duration 60
+auxdisp-codex-quota preview
 ```
 
-前台调试用 `auxdisp-codex-quota run`，Ctrl+C 退出；无子命令也等同于 `run`。Windows 前台和后台共享单实例锁，需要先 `stop` 后前台调试。
+预览默认保存到当前目录的 `auxdisp-codex-quota-preview.png`，同名文件会被替换；可用 `preview --output <路径>` 指定文件。前台运行用 `auxdisp-codex-quota run`，Ctrl+C 退出并尝试熄屏；无子命令仅显示帮助。Windows 前台和后台共享单实例锁，需要先 `stop` 后前台调试。
 
 ## 后台运行与更新
 
@@ -62,9 +61,11 @@ auxdisp-codex-quota run --demo --headless latest.png --duration 60
 |---|---|
 | `start` | 注册或更新本用户任务并启动，重复调用不创建第二实例 |
 | `status` | 查看注册、启用、进程、USB 和最近成功采集时间 |
-| `stop` | 禁用登录启动和崩溃重试，再停止当前实例 |
+| `stop` | 禁用登录启动和崩溃重试，停止当前实例并尝试清屏、将亮度归零 |
 | `restart` | 停止后重新启动，重新加载配置 |
 | `uninstall-service` | 停止并注销本用户任务，保留配置和日志 |
+
+正常退出会清屏并将亮度归零，下次启动恢复配置亮度；断连或强制终止时不能保证熄屏，具体硬件效果仍需实机确认。
 
 后台任务独立于启动它的终端，在当前用户登录时运行，不是开机即运行的系统服务。完整终端关闭、登录/休眠恢复、电池行为和长期运行仍待系统验收。
 

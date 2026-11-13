@@ -1,5 +1,7 @@
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+import runpy
 
 from PIL import Image
 
@@ -50,16 +52,17 @@ def test_unknown_is_not_zero_and_long_unicode_title_is_clipped(document):
 def test_preview_modes_never_start_collector_or_usb(tmp_path, monkeypatch):
     monkeypatch.setattr("auxdisp_codex_quota.cli.Collector", lambda *a: (_ for _ in ()).throw(AssertionError("API called")))
     monkeypatch.setattr("auxdisp_codex_quota.cli.DisplayWorker", lambda *a: (_ for _ in ()).throw(AssertionError("USB called")))
-    for name, options in (("dual", []), ("single", ["--account-index", "1"]), ("error", ["--simulate-error"])):
+    for name in ("dual", "again"):
         path = tmp_path / f"{name}.png"
-        assert main(["--preview", str(path), *options]) == 0
+        assert main(["preview", "--output", str(path)]) == 0
         with Image.open(path) as image:
             assert image.size == (1280, 720)
 
 
 def test_headless_demo_stops_and_releases_workers(tmp_path):
     output = tmp_path / "latest.png"
-    assert main(["--demo", "--headless", str(output), "--duration", "0.6"]) == 0
+    dev_main = runpy.run_path(str(Path(__file__).parents[1] / "scripts/dev_display.py"))["main"]
+    assert dev_main(["--headless", str(output), "--duration", "0.6"]) == 0
     assert output.is_file()
 
 

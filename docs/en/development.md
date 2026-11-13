@@ -50,3 +50,16 @@ uv build --no-sources
 `.artifacts/` and each project's `.venv` are already ignored by Git. Do not commit caches, virtual environments, or build outputs; continue committing `uv.lock`.
 
 If access to `.lock` in the default user cache is denied, first check that `UV_CACHE_DIR` points to the shared directory above. If a Python build subprocess still reports `PermissionError: [WinError 5]` in a temporary directory, check the terminal or execution sandbox's file access permissions. Retry in a local terminal with the appropriate permissions, or follow the authorization process of the managed execution environment. Changing the cache directory alone cannot resolve sandbox permission restrictions; dependency or lockfile changes are unnecessary for this issue.
+
+
+## auxdisp-codex-quota offline developer tools
+
+The public `preview` command generates one synthetic PNG. Fixtures, error simulation, and bounded PNG rotation live in the source developer tool. Run these commands from `apps/auxdisp-codex-quota` with the shared cache configured above:
+
+```powershell
+uv run --locked --no-sources python scripts/dev_display.py --preview ../../.artifacts/auxdisp-codex-quota/single.png --account-index 1
+uv run --locked --no-sources python scripts/dev_display.py --preview ../../.artifacts/auxdisp-codex-quota/error.png --simulate-error
+uv run --locked --no-sources python scripts/dev_display.py --headless ../../.artifacts/auxdisp-codex-quota/latest.png --duration 2
+```
+
+The tool defaults to bundled synthetic data and never invokes codex-auth, USB, or task registration. `--fixture <path>` loads local schema-1 JSON; `--inspect` prints normalized data from that fixture. Custom fixtures can contain identities; do not share raw output. Use `python scripts/dev_display.py --help` for developer options; these options are absent from the installed public CLI. The script is included in the source distribution, rather than the wheel's user entry points.

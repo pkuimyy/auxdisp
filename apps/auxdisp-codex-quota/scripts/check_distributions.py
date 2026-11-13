@@ -22,12 +22,12 @@ def check(directory=Path("dist")):
             raise ValueError("Distribution metadata must match pyproject.toml")
         required = {f"auxdisp_codex_quota/{module}.py" for module in (
             "__init__", "__main__", "cli", "_background", "host", "paths", "scheduler", "service", "win32",
-            "collector", "config", "display", "model", "render", "runtime",
+            "collector", "config", "display", "model", "preview", "render", "runtime",
             "task_adapter", "task_spec", "direct_com", "_scheduler_com_worker",
         )} | {"auxdisp_codex_quota/data/demo.json"}
         if not required.issubset(names) or not any(n.endswith("/licenses/LICENSE") for n in names):
             raise ValueError("Wheel is missing required application modules, synthetic data, or license")
-        if any(n.startswith("auxdisp_driver/") or "/state/" in n or "/logs/" in n for n in names):
+        if any(n.startswith(("auxdisp_driver/", "scripts/")) or "/state/" in n or "/logs/" in n for n in names):
             raise ValueError("Wheel contains local driver sources or runtime data")
         if not any(r.startswith("auxdisp-driver") and "@" not in r for r in metadata.get_all("Requires-Dist", [])):
             raise ValueError("auxdisp-driver must remain an ordinary index dependency")

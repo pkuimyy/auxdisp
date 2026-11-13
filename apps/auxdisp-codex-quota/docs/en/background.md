@@ -68,13 +68,13 @@ A successfully resolved command is recorded in `state/launch.json` for reuse whe
 
 File logs rotate at 1 MiB with three backups. Logs and health state contain no tokens, raw account JSON, email addresses, or account names. State records only an instance identifier, diagnostic PID, heartbeat, last successful collection time, and observed USB connection state. The PID is never a termination target.
 
-`status` reports `registered`, `enabled`, `process_running`, `usb_connected`, and `last_success_at` separately as JSON. A cross-process named mutex proves runtime liveness; a PID file does not. USB health becomes `null` when the runtime is stopped or the heartbeat is older than ten seconds. Boolean USB status is the last observed transport state, not continuous hardware probing. Headless foreground output also reports `null` for USB.
+`status` shows readable text; `status --json` reports `registered`, `enabled`, `process_running`, `usb_connected`, and `last_success_at` separately as JSON. A cross-process named mutex proves runtime liveness; a PID file does not. USB health becomes `null` when the runtime is stopped or the heartbeat is older than ten seconds. Boolean USB status is the last observed transport state, not continuous hardware probing.
 
 ## Stop and recovery
 
-`stop` disables the task before sending the user's named stop Event. The runtime cancels the active collector process tree and waits for display-resource cleanup. Repeated stop is safe when no instance is running.
+`stop` disables the task before sending the user's named stop Event. The runtime cancels the active collector process tree and waits for the display thread to clear the image, set brightness to zero, and release USB. Ctrl+C and task removal use the same cleanup; restarting restores configured brightness. Shutdown does not reconnect an absent device just to turn it off. Repeated stop is safe when no instance is running.
 
-Graceful shutdown has a 30-second controller deadline. Only after that deadline may Task Scheduler terminate this owned task, followed by up to five seconds to confirm exit. Forced shutdown is reported and recorded in `state/last-stop.json`. No arbitrary Python or Codex PID is killed; a hung foreground instance with no registered task cannot be force-killed through this fallback.
+Graceful shutdown has a 30-second controller deadline. Only after that deadline may Task Scheduler terminate this owned task, followed by up to five seconds to confirm exit. Forced shutdown is reported and recorded in `state/last-stop.json`. Screen-off failure does not prevent resource release or process exit. Forced termination, a crash, or USB disconnection can prevent screen-off. The `screen_off` result distinguishes `succeeded` (clear and zero-brightness calls returned successfully), `failed`, `not_attempted`, and `unknown`, separately from `forced` and `cleanup_complete`. Physical backlight behavior still needs device acceptance and cannot be inferred from process exit. No arbitrary Python or Codex PID is killed; a hung foreground instance with no registered task cannot be force-killed through this fallback.
 
 The task ignores duplicate instances, has no long-running execution limit, permits battery operation, does not stop when idle ends, and starts when available. Unexpected process exits are retried at one-minute intervals, at most three times. Existing USB reconnection and stale-data behavior handle disconnections and API timeouts without restarting the host. Actual resume and scheduler recovery behavior still requires system acceptance.
 
@@ -83,12 +83,10 @@ The task ignores duplicate instances, has no long-running execution limit, permi
 ```powershell
 auxdisp-codex-quota run
 auxdisp-codex-quota run --config C:\Users\Me\auxdisp-config.toml
-auxdisp-codex-quota run --demo --headless preview.png --duration 60
-auxdisp-codex-quota --preview preview.png
-auxdisp-codex-quota --inspect
+auxdisp-codex-quota preview
 ```
 
-Omitting the command remains compatible with foreground `run`. Foreground and background Windows runtimes share the user's instance mutex. Previews and inspection do not start a display runtime. Existing preview, inspect, demo, fixture, headless, and duration flags remain available; they cannot be combined with management commands.
+Omitting the command shows help. Foreground and background Windows runtimes share the user's instance mutex; stop the background runtime before foreground operation. `preview` does not start a display runtime; see [PNG preview](usage.md#png-preview) for paths and behavior. Use `<command> --help` for command-specific options.
 
 Before uninstalling the Python package:
 

@@ -45,6 +45,7 @@ class HealthWriter:
         last_success = runtime.store.snapshot.last_success_at
         if last_success is not None:
             self.last_success_at = last_success.isoformat()
+        screen_off = runtime.output.screen_off_result
         write_state(self.paths.state, {
             "instance": self.instance, "pid": os.getpid(), "mode": self.mode,
             "phase": phase, "heartbeat": time.time(),
@@ -52,6 +53,7 @@ class HealthWriter:
             "usb_connected": runtime.output.usb_connected if phase == "running" else False,
             "last_success_at": self.last_success_at,
             "cleanup_complete": cleanup_complete,
+            "screen_off": screen_off if screen_off in ("succeeded", "failed", "not_attempted") else "unknown",
         })
 
 

@@ -45,7 +45,7 @@ Installation does not register a task; the first `start` registers and launches 
 Without a device or accounts, try an offline Demo:
 
 ```powershell
-auxdisp-codex-quota --preview preview.png
+auxdisp-codex-quota preview
 ```
 
 To uninstall, stop and remove the task first. Configuration and logs are preserved:

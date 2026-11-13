@@ -18,7 +18,7 @@ font = ""
 [logging]
 level = "INFO"
 
-# Replace this key with the exact stable account_key printed by --inspect.
+# Replace this key with the exact stable account_key printed by codex-auth list --api --json.
 # This is an explicit policy, never inferred from an email address.
 [accounts."replace-with-stable-outlook-account-key"]
 unlimited_windows = [300]

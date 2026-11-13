@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import math
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from unicodedata import east_asian_width
 
 from PIL import Image, ImageDraw, ImageFont
@@ -110,7 +111,8 @@ class Page:
     card_page: str = ""
 
 
-def make_page(snapshot: Snapshot, current: str | None, now: datetime, settings: Settings) -> Page:
+def make_page(snapshot: Snapshot, current: str | None, now: datetime, settings: Settings,
+              *, card_page_index: int | None = None) -> Page:
     account = next((a for a in snapshot.accounts if a.key == current), None)
     rows = []
     if account:
@@ -143,6 +145,8 @@ def make_page(snapshot: Snapshot, current: str | None, now: datetime, settings: 
     # Complete one card cycle within an account rotation, avoiding skipped pages
     # when account count and card-page count share a common factor.
     card_index = int((now.timestamp() % settings.rotation_seconds) * card_pages / settings.rotation_seconds)
+    if card_page_index is not None:
+        card_index = max(0, min(card_page_index, card_pages - 1))
     card_rows = tuple(CardRow(f"{c.title} [{c.status}]", timestamp(c.expires_at, now),
                              time_left(c.expires_at, now)) for c in cards[card_index * 3:card_index * 3 + 3])
     return Page(
@@ -280,4 +284,13 @@ class Renderer:
 
 def save_preview(image, path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
-    image.save(path, format="PNG")
+    # Same-directory replacement preserves the old file if encoding fails.
+    temporary = None
+    try:
+        with NamedTemporaryFile(dir=path.parent, prefix=".auxdisp-codex-quota-", suffix=".png", delete=False) as file:
+            temporary = Path(file.name)
+            image.save(file, format="PNG")
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)

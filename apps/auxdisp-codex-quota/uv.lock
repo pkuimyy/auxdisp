@@ -8,7 +8,7 @@ resolution-markers = [
 
 [[package]]
 name = "auxdisp-codex-quota"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "auxdisp-driver" },

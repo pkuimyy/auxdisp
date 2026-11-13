@@ -45,7 +45,7 @@ auxdisp-codex-quota stop
 没有设备或账户也能先看离线 Demo：
 
 ```powershell
-auxdisp-codex-quota --preview preview.png
+auxdisp-codex-quota preview
 ```
 
 不再使用时，先停止并注销任务，再卸载包；配置和日志会保留：

@@ -36,7 +36,7 @@ auxdisp-codex-quota stop
 auxdisp-codex-quota run
 ```
 
-Check for zero brightness, landscape mode, and USB unavailable / transfer failed logs. `usb_connected` is the last observed transport state; `null` means unknown, stopped, or stale health, not a successful connection. Foreground `run` uses real accounts and USB; exit with Ctrl+C. Stop the background runtime first because they share an instance lock. Use `--preview preview.png` to check rendering independently. USB reconnection retries the latest frame.
+Check for zero brightness, landscape mode, and USB unavailable / transfer failed logs. `usb_connected` is the last observed transport state; `null` means unknown, stopped, or stale health, not a successful connection. Foreground `run` uses real accounts and USB; exit with Ctrl+C. Stop the background runtime first because they share an instance lock. Use `preview --output preview.png` to check rendering independently. USB reconnection retries the latest frame.
 
 ## API ERROR / STALE
 
@@ -75,4 +75,4 @@ Inspect the principal, Description, and arguments in Task Scheduler without chan
 
 ## Report a problem
 
-Include OS, Python and both package versions, device VID/PID, the command, and redacted status/logs. Do not upload real emails, names, account_key values, auth files, raw --inspect / codex-auth JSON, or unredacted screenshots. [GitHub Issues](https://github.com/pkuimyy/auxdisp/issues).
+Include OS, Python and both package versions, device VID/PID, the command, and redacted status/logs. Do not upload real emails, names, account_key values, auth files, raw codex-auth JSON, or unredacted screenshots. [GitHub Issues](https://github.com/pkuimyy/auxdisp/issues).

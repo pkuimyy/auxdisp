@@ -15,7 +15,7 @@ Put multiple Codex accounts’ remaining quotas on a desktop auxiliary display: 
 - Multiple accounts rotate every 15 seconds by default; read-only collection runs every 60 seconds.
 - 5-hour / 7-day remaining percentages, ten-segment bars, reset times, and a fixed date/clock.
 - Global or per-account collection failures retain history with API ERROR / STALE indicators; USB reconnects automatically.
-- Current-user Windows background task, single-instance protection, CLI lifecycle management, and device-free preview / PNG output.
+- Current-user Windows background task, single-instance protection, CLI lifecycle management, and device-free synthetic PNG previews.
 
 The app only runs `codex-auth list --api --json`. It does not automatically switch accounts, consume Reset Cards, purchase credits, or modify authentication information, and does not read or store authentication tokens. codex-auth manages its own cache and authentication.
 
@@ -45,16 +45,15 @@ auxdisp-codex-quota status
 auxdisp-codex-quota stop
 ```
 
-The first `start` registers and launches a current-user task. Defaults are 30% brightness, 15-second rotation, and 60-second collection. `status` returns JSON: `process_running` and `usb_connected` are separate because a running process does not prove a connected display.
+The first `start` registers and launches a current-user task. Defaults are 30% brightness, 15-second rotation, and 60-second collection. `status` shows readable text; `status --json` provides structured output. Process and USB status are separate because a running process does not prove a connected display.
 
-Without hardware, generate a synthetic preview or run an offline rotation for 60 seconds:
+Without hardware, generate a synthetic preview:
 
 ```powershell
-auxdisp-codex-quota --preview preview.png
-auxdisp-codex-quota run --demo --headless latest.png --duration 60
+auxdisp-codex-quota preview
 ```
 
-Use `auxdisp-codex-quota run` for foreground debugging and Ctrl+C to exit; omitting the subcommand also means `run`. Foreground and background Windows runtimes share an instance lock, so `stop` before foreground debugging.
+The default preview is `auxdisp-codex-quota-preview.png` in the current directory, replacing an existing file; use `preview --output <path>` to choose a file. Use `auxdisp-codex-quota run` for foreground operation and Ctrl+C to exit and attempt to turn off the display. Omitting the subcommand shows help. Foreground and background Windows runtimes share an instance lock, so `stop` before foreground debugging.
 
 ## Background operation and updates
 
@@ -62,9 +61,11 @@ Use `auxdisp-codex-quota run` for foreground debugging and Ctrl+C to exit; omitt
 |---|---|
 | `start` | Register or reconcile the current-user task and launch it; repeated calls do not create another instance |
 | `status` | Report registration, enablement, process, USB, and last successful collection |
-| `stop` | Disable logon startup and crash retries, then stop the instance |
+| `stop` | Disable logon startup and crash retries, stop the instance, and attempt to clear the screen and set brightness to zero |
 | `restart` | Stop and start again, reloading configuration |
 | `uninstall-service` | Stop and remove the current-user task, preserving configuration and logs |
+
+Normal shutdown clears the screen and sets brightness to zero; starting again restores the configured brightness. Disconnection or forced termination can prevent this; physical screen-off behavior still needs device acceptance.
 
 The background task is independent of its launching terminal and runs while the user is logged in, rather than as a pre-login system service. Full terminal closure, logon/resume, battery behavior and long-duration operation still require acceptance.
 

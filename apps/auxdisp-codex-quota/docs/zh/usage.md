@@ -67,10 +67,10 @@ font = 'C:\Windows\Fonts\consola.ttf'
 
 ## 特殊账户额度策略
 
-只读查看规范化数据与稳定 `account_key`：
+直接从数据源只读查看稳定 `account_key`：
 
 ```powershell
-auxdisp-codex-quota --inspect
+codex-auth list --api --json
 ```
 
 输出包含账户身份信息，不要公开。如果你有明确依据确认某账户没有 5 小时限制，才按完整稳定 ID 配置：
@@ -82,22 +82,19 @@ unlimited_windows = [300]
 
 策略只匹配稳定 ID，支持 300 / 10080 分钟。不会从邮箱后缀、`secondary=null` 或缺失窗口推断无限额度。没有数据默认显示 `DATA UNAVAILABLE`，不是 0%。
 
-## 离线与无设备运行
+## PNG 预览
 
 ```powershell
-auxdisp-codex-quota --preview dual.png
-auxdisp-codex-quota --preview weekly.png --account-index 1
-auxdisp-codex-quota --preview error.png --simulate-error
-auxdisp-codex-quota run --demo --headless latest.png --duration 60
+auxdisp-codex-quota preview
+auxdisp-codex-quota preview --output .\images\preview.png
+auxdisp-codex-quota preview --config .\settings.toml
 ```
 
-这些命令使用合成账户，不访问真实账户或 USB。`--account-index` 从 0 起算。`--fixture <JSON路径>` 可使用符合 schema 1 的自定义数据。
+`preview` 只用包内合成账户生成 1280×720 PNG，不调用 codex-auth、USB 或后台任务，也不打开浏览器。默认选择首个合成账户与第一张卡片页，时钟和倒计时使用生成时刻。
 
-```powershell
-auxdisp-codex-quota run --headless real-accounts.png --duration 65
-```
+默认输出到命令执行时当前目录中的 `auxdisp-codex-quota-preview.png`；`--output` 可指定相对或绝对文件路径，必要时创建父目录。同名文件会被替换；写入失败返回非零退出码，并保留原文件。完成后输出模拟数据说明和文件绝对路径。
 
-**这个命令会读取真实账户**，只把 USB 输出替换为 PNG；图片可能包含账户名称或邮箱，发布前请脱敏。与 `--demo` 组合才完全离线。`--duration` 到期自动退出；未指定时持续运行至 Ctrl+C。
+`--config` 使用指定配置中的渲染设置；未指定时遵循用户配置文件和内置默认值的优先级。预览不受配置中的采集命令、亮度或 USB 设置影响。测试 fixture、错误模拟和持续 PNG 输出属于开发工具，见[本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。
 
 ## 数据来源与边界
 

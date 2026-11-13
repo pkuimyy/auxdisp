@@ -50,3 +50,16 @@ uv build --no-sources
 `.artifacts/` 和各项目的 `.venv` 已被 Git 忽略；缓存、虚拟环境和构建产物不提交，`uv.lock` 继续提交。
 
 若默认用户缓存目录出现 `.lock` 拒绝访问，先检查 `UV_CACHE_DIR` 是否已指向上述共享目录。若 Python 构建子进程仍在临时目录中报 `PermissionError: [WinError 5]`，应检查终端或执行沙箱的文件访问权限；在具备相应权限的本地终端重试，受控执行环境则按其授权流程处理。更换缓存目录不能单独解决沙箱权限问题，无需为此更改依赖或锁文件。
+
+
+## auxdisp-codex-quota 离线开发工具
+
+用户入口只保留 `preview` 生成单张合成图片；fixture、错误模拟和有界 PNG 轮播在源码开发工具中提供。以下命令在 `apps/auxdisp-codex-quota` 目录执行，并使用上文配置的共享缓存：
+
+```powershell
+uv run --locked --no-sources python scripts/dev_display.py --preview ../../.artifacts/auxdisp-codex-quota/single.png --account-index 1
+uv run --locked --no-sources python scripts/dev_display.py --preview ../../.artifacts/auxdisp-codex-quota/error.png --simulate-error
+uv run --locked --no-sources python scripts/dev_display.py --headless ../../.artifacts/auxdisp-codex-quota/latest.png --duration 2
+```
+
+开发工具默认使用包内合成数据，始终不调用 codex-auth 或 USB，也不注册任务。`--fixture <路径>` 可以替换为 schema 1 的本地 JSON；`--inspect` 查看这份 fixture 的规范化数据。自定义 fixture 可能包含账户信息，勿公开原始输出。开发选项通过 `python scripts/dev_display.py --help` 查看；它们不出现在安装后的公开 CLI 中。开发脚本随源码包提供，不放入 wheel 的用户入口。

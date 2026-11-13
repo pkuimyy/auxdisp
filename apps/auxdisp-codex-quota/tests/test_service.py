@@ -24,6 +24,7 @@ from auxdisp_codex_quota.display import DisplayWorker, FileAdapter
 from auxdisp_codex_quota.host import HealthWriter, file_logging, run_host
 from auxdisp_codex_quota.model import DataError
 from auxdisp_codex_quota.paths import AppPaths, select_config
+from auxdisp_codex_quota.preview import FixtureCollector
 from auxdisp_codex_quota.render import Renderer
 from auxdisp_codex_quota.runtime import Runtime
 from auxdisp_codex_quota.scheduler import MARKER, NS, TaskScheduler, TaskSpec
@@ -652,7 +653,7 @@ def test_cli_management_never_collects_accounts_or_opens_usb(monkeypatch, capsys
     for command in ("start", "stop", "status", "restart", "uninstall-service"):
         assert cli.main([command]) == 0
         controller.execute.assert_called_with(command, None)
-    assert '"registered": true' in capsys.readouterr().out
+    assert "Task registered: yes" in capsys.readouterr().out
     with pytest.raises(SystemExit):
         cli.main(["start", "--demo"])
 
@@ -686,7 +687,7 @@ def test_runtime_stop_cancels_active_collection_and_closes_virtual_display(tmp_p
 
 
 def test_host_health_is_anonymous_and_records_graceful_shutdown(tmp_path, document):
-    collector = cli.FixtureCollector()
+    collector = FixtureCollector()
     output = DisplayWorker(FileAdapter(tmp_path / "latest.png"))
     runtime = Runtime(Settings(), CollectionWorker(collector), Renderer(Settings()), output)
     ipc, paths = FakeIPC([]), AppPaths(tmp_path / "profile")
@@ -756,7 +757,7 @@ def test_private_background_entry_runs_synthetic_io_and_closes_logs(tmp_path, mo
     config = tmp_path / "settings.toml"
     config.write_text("", encoding="utf-8")
     paths = AppPaths.current()
-    monkeypatch.setattr(background, "Collector", lambda *args: cli.FixtureCollector())
+    monkeypatch.setattr(background, "Collector", lambda *args: FixtureCollector())
     monkeypatch.setattr(background, "DisplayAdapter", lambda *args: FileAdapter(tmp_path / "background.png"))
     monkeypatch.setattr(background, "run_host", lambda runtime, **kwargs: run_host(
         runtime, 0.25, ipc=FakeIPC([]), **kwargs,
@@ -813,3 +814,52 @@ def test_real_scheduler_bridge_queries_a_missing_unique_task_without_registratio
     scheduler = TaskScheduler()
     scheduler.name += "-pytest-" + uuid.uuid4().hex
     assert scheduler.query() == {"registered": False}
+
+
+@pytest.mark.parametrize("forced", [False, True])
+def test_stop_screen_off_cannot_reuse_previous_success(managed, forced):
+    controller, _, ipc, _ = managed
+    controller.execute("start")
+    write_state(controller.paths.state, {"instance": "old", "phase": "stopped", "screen_off": "succeeded",
+                                         "cleanup_complete": True})
+    ipc.wedged = forced
+    result = controller.execute("stop")["stop_result"]
+    assert result["screen_off"] == "unknown"
+    assert result["cleanup_complete"] is None
+    repeated = controller.execute("stop")["stop_result"]
+    assert repeated["screen_off"] == "not_attempted"
+
+
+def test_stop_reads_screen_off_from_current_host(managed, monkeypatch):
+    controller, _, ipc, _ = managed
+    controller.execute("start")
+    write_state(controller.paths.state, {"instance": "current", "phase": "running"})
+    original = ipc.signal_stop
+
+    def signal():
+        write_state(controller.paths.state, {"instance": "current", "phase": "stopped", "screen_off": "failed",
+                                             "cleanup_complete": True})
+        return original()
+
+    monkeypatch.setattr(ipc, "signal_stop", signal)
+    result = controller.execute("stop")["stop_result"]
+    assert result["screen_off"] == "failed" and result["cleanup_complete"] is True
+
+
+def test_ctrl_c_host_records_screen_off_after_runtime_cleanup(tmp_path, monkeypatch):
+    from auxdisp_codex_quota.display import DisplayAdapter
+
+    device = Mock(width=1280, height=720)
+    adapter = DisplayAdapter(opener=lambda: device)
+    output = DisplayWorker(adapter)
+    runtime = Runtime(Settings(), Mock(), Renderer(Settings()), output)
+    adapter.device = device
+    monkeypatch.setattr(runtime, "step", Mock(side_effect=KeyboardInterrupt))
+    paths = AppPaths(tmp_path)
+    with pytest.raises(KeyboardInterrupt):
+        run_host(runtime, paths=paths, ipc=FakeIPC([]))
+    state = read_state(paths.state)
+    assert state["phase"] == "stopped" and state["screen_off"] == "succeeded"
+    assert state["cleanup_complete"] is True
+    device.set_brightness.assert_called_once_with(0)
+    device.close.assert_called_once()
