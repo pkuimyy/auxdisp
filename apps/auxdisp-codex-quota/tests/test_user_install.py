@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import uuid
 
 import pytest
 import PIL
@@ -30,9 +31,10 @@ def test_task_flags_load_user_install_and_dependencies_without_cwd_or_pythonpath
     package = root / "auxdisp_codex_quota"
     package.mkdir()
     (package / "__init__.py").write_text("", encoding="utf-8")
-    (root / "auxdisp_user_dependency.py").write_text("value = 'user dependency'", encoding="utf-8")
+    dependency_name = "_auxdisp_user_dependency_" + uuid.uuid4().hex
+    (root / f"{dependency_name}.py").write_text("value = 'user dependency'", encoding="utf-8")
     (package / "_background.py").write_text(
-        "import json, sys, auxdisp_user_dependency as dependency\n"
+        f"import json, sys, {dependency_name} as dependency\n"
         "print(json.dumps({'file': __file__, 'dependency': dependency.value, "
         "'safe_path': sys.flags.safe_path, 'ignore_environment': sys.flags.ignore_environment}))\n",
         encoding="utf-8",
@@ -55,12 +57,14 @@ def test_task_flags_load_user_install_and_dependencies_without_cwd_or_pythonpath
     assert Path(data["file"]).parent == package
     assert data["dependency"] == "user dependency"
     assert data["safe_path"] and data["ignore_environment"]
-    # Reproduce the old failure with the exact same user install and environment.
+    # -I hides this user-only dependency. Probe its unique name rather than the
+    # app, which may also be installed in the base interpreter's global site.
     old = subprocess.run(
-        [python, "-I", "-m", "auxdisp_codex_quota._background"],
+        [python, "-I", "-m", dependency_name],
         cwd=hostile, env=env, capture_output=True, text=True, timeout=15,
     )
-    assert old.returncode != 0 and "No module named" in old.stderr
+    assert old.returncode != 0
+    assert f"No module named {dependency_name}" in old.stderr, old.stderr
 
     # Exercise the real background entry point and its native Pillow dependency
     # in the same user-only layout, without opening USB or collecting accounts.
