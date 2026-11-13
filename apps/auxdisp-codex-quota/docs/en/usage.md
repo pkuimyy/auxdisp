@@ -105,6 +105,12 @@ Only executes `codex-auth list --api --json` ([JSON API schema 1](https://github
 
 Windows are matched by duration, not primary/secondary order. API ERROR can indicate a failed command or current-account refresh. History stays in the running process’s memory; restarting does not restore quota snapshots. LAST OK is the overall successful request time, not each account’s `usage.updated_at`.
 
-CREDITS / RESET CARDS / NEXT EXPIRY remain `N/A` because they are not connected. Ten-segment bars round remaining percentages upward; displayed values have up to two decimal places.
+The quota table shows reset date/time in the local timezone under `RESET AT`, and time remaining under `RESET IN`. Once the reset time is reached, `DUE` remains until collection confirms the actual quota. Ten-segment bars round remaining percentages upward; displayed values have up to two decimal places.
+
+The screen does not show `CREDITS`. `RESET CARDS` reads `usage.reset_credits`. Valid zero values show `0`; missing or invalid values show `N/A`. Counts are not inferred from card details.
+
+Card details read `usage.reset_credit`, retaining each card's title, status, expiry date/time (`EXPIRES AT`), and time remaining (`EXPIRES IN`). Cards are sorted by earliest expiry; missing or invalid expiry times sort last and show `--`. Expired cards show `EXPIRED`. Each page holds up to three cards; all card pages rotate within one account rotation interval, with `RESET CARDS PAGES 1/1` on the right and `ACCOUNT 1/3` in the footer. Card-page changes affect only the card region, keeping the selected account and upper quota bars intact. Accounts still rotate at the configured interval; quota collection and countdowns update independently. Missing details show `NO CARD DETAILS` or `N/A`, which does not imply a zero count.
+
+Time remaining uses days/hours or hours/minutes, with `1m` for the final partial minute. Countdowns update with the display and never consume cards. Failed refreshes retain historical quotas and cards with `STALE`; successful refreshes replace that history.
 
 For development environments, tests, and independent builds, see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md); for failures, see [troubleshooting](troubleshooting.md).

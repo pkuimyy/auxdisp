@@ -16,7 +16,7 @@ AuxDisp provides Python drivers and ready-to-use applications for USB / serial a
 - **auxdisp-codex-quota** displays multiple accounts' 5-hour / 7-day remaining quotas, reset times, date, and clock. Defaults: rotate every 15 seconds and collect every 60 seconds.
 - Collection failures retain history with error indicators; USB output reconnects automatically. Windows supports background operation and CLI lifecycle management.
 
-CREDITS, RESET CARDS, and NEXT EXPIRY are not connected and show `N/A`. The application only reads quotas; it does not automatically switch accounts, consume reset cards, purchase credits, or modify authentication information.
+The display includes reset-card counts, individual expiry times and time remaining, plus quota reset countdowns. Missing resource data remains `N/A`. The application only reads quotas; it does not automatically switch accounts, consume reset cards, purchase credits, or modify authentication information.
 
 ## Choose a project
 

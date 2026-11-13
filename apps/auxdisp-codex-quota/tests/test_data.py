@@ -166,3 +166,49 @@ def test_example_configuration_loads_and_has_safe_defaults():
     settings = load_settings(Path(__file__).parents[1] / "config.example.toml")
     assert (settings.refresh_seconds, settings.rotation_seconds, settings.timeout_seconds) == (60, 15, 20)
     assert settings.brightness == 30
+
+
+def test_resources_parse_multiple_cards_and_preserve_on_refresh_failure(document):
+    usage = document["accounts"][0]["usage"]
+    usage.update(credits={"balance": "12.50", "unlimited": False}, reset_credits=2, reset_credit=[
+        {"title": "Full reset", "status": "available", "expires_at": "2026-12-12T21:23:03.166451Z"},
+        {"title": "Weekly reset", "status": "available", "expires_at": "2026-11-12T01:00:00+08:00"},
+    ])
+    store = AccountStore()
+    store.success(parse_accounts(document), NOW)
+    old = store.snapshot.accounts[0]
+    assert old.credits == "12.50" and old.reset_credits == 2
+    assert len(old.reset_cards) == 2
+    assert old.reset_cards[1].expires_at == datetime(2026, 11, 12, 1, tzinfo=NOW.tzinfo).timestamp()
+    usage.update(credits={"balance": "0"}, reset_credits=0, reset_credit=[], refresh={"status": "error"})
+    store.success(parse_accounts(document), NOW + timedelta(minutes=1))
+    failed = store.snapshot.accounts[0]
+    assert (failed.credits, failed.reset_credits, failed.reset_cards) == (old.credits, 2, old.reset_cards)
+    assert failed.stale
+    usage["refresh"] = {"status": "ok"}
+    store.success(parse_accounts(document), NOW + timedelta(minutes=2))
+    fresh = store.snapshot.accounts[0]
+    assert fresh.credits == "0" and fresh.reset_credits == 0 and fresh.reset_cards == ()
+    assert not fresh.stale
+
+
+@pytest.mark.parametrize("balance,count", [(None, None), (True, True), ("NaN", -1), ("-1", 1.5), ("Infinity", "2"), ("garbage", {})])
+def test_invalid_resource_values_are_unknown(document, balance, count):
+    usage = document["accounts"][0]["usage"]
+    usage.update(credits={"balance": balance}, reset_credits=count, reset_credit=[None, {
+        "expires_at": "invalid", "status": "available"}])
+    account = parse_accounts(document)[0]
+    assert account.credits is None and account.reset_credits is None
+    assert account.reset_cards[0].expires_at is None
+
+
+def test_unlimited_credits_and_resources_without_windows_remain_stale(document):
+    usage = document["accounts"][0]["usage"]
+    usage.update(primary=None, secondary=None, credits={"unlimited": True}, reset_credits=0)
+    store = AccountStore()
+    store.success(parse_accounts(document), NOW)
+    assert store.snapshot.accounts[0].credits == "UNLIMITED"
+    usage.update(credits={}, reset_credits=None, refresh={"status": "error"}, updated_at=0)
+    store.success(parse_accounts(document), NOW)
+    account = store.snapshot.accounts[0]
+    assert account.stale and account.updated_at != 0

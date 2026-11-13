@@ -92,15 +92,15 @@ Logs: `%LOCALAPPDATA%\auxdisp-codex-quota\logs\service.log`, 1 MiB per file with
 |---|---|
 | `5 HOUR` / `7 DAYS` | Identified by 300 / 10080-minute windows, not by primary/secondary position |
 | `REMAINING` / `LEFT` | Remaining quota, not usage; each segment represents 10%, rounded up |
-| `RESET AT` | Reset time for that window in the local timezone |
+| `RESET AT` / `RESET IN` | Window reset date/time in the local timezone and time remaining |
 | `NOT LIMITED` | An explicitly configured account policy; never inferred from missing data |
 | `UNAVAILABLE` / `DATA UNAVAILABLE` | No usable data for that window; neither zero nor unlimited |
 | `STALE` | Collection failure or cached data; values may be outdated |
 | `API OK` / `API ERROR` | Latest request and current-account refresh status; OK does not guarantee every window exists |
 | `LAST OK` | Last successful overall collection, not each account’s source-data timestamp |
-| `CREDITS` | Not connected; `N/A` is not a real balance |
-| `RESET CARDS` | Not connected; `N/A` is not a card count |
-| `NEXT EXPIRY` | Not connected; `N/A` does not provide an expiry time |
+| `RESET CARDS` | API reset-card count; `N/A` if missing |
+| `ACCOUNT 1/3` / `RESET CARDS PAGES 1/1` | Current account / total accounts, and current card page / total card pages for that account |
+| `EXPIRES AT` / `EXPIRES IN` | Per-card expiry date/time and time remaining; multiple cards are sorted by expiry and paginated |
 
 ## Troubleshooting
 

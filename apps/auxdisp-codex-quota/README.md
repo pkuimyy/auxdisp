@@ -92,15 +92,15 @@ auxdisp-codex-quota start
 |---|---|
 | `5 HOUR` / `7 DAYS` | 按数据的 300 / 10080 分钟周期识别，不按 primary/secondary 位置猜测 |
 | `REMAINING` / `LEFT` | 剩余额度，非已用比例；每格 10%，按剩余值向上取整 |
-| `RESET AT` | 对应周期的重置时间，按本机时区显示 |
+| `RESET AT` / `RESET IN` | 对应周期的重置日期时间（本机时区）及剩余时长 |
 | `NOT LIMITED` | 仅由明确配置的账户策略指定，不能从缺失数据推断 |
 | `UNAVAILABLE` / `DATA UNAVAILABLE` | 没有该周期的可用数据，不等于 0% 或无限额度 |
 | `STALE` | 采集失败或使用缓存，显示的数据可能不是最新值 |
 | `API OK` / `API ERROR` | 最近请求及当前账户刷新状态；OK 不保证每个窗口都有数据 |
 | `LAST OK` | 最近一次整体采集成功时间，不等于每个账户的源数据更新时间 |
-| `CREDITS` | 尚未接入，显示 `N/A`，不是实际余额 |
-| `RESET CARDS` | 尚未接入，显示 `N/A`，不是实际卡片数量 |
-| `NEXT EXPIRY` | 尚未接入，显示 `N/A`，不提供实际到期时间 |
+| `RESET CARDS` | API 返回的重置卡数量；缺失显示 `N/A` |
+| `ACCOUNT 1/3` / `RESET CARDS PAGES 1/1` | 当前账户／账户总数，以及当前卡片页／该账户卡片总页数 |
+| `EXPIRES AT` / `EXPIRES IN` | 每张重置卡的到期日期时间及剩余时长；多卡按到期时间排序并分页显示 |
 
 ## 故障排查
 

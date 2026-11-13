@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, replace
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 import math
 from typing import Any
 
@@ -18,6 +19,35 @@ class Window:
 
 
 @dataclass(frozen=True)
+class ResetCard:
+    title: str
+    status: str
+    expires_at: float | None
+
+
+def expiry_timestamp(value: Any) -> float | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return parsed.timestamp() if parsed.tzinfo is not None else None
+    except (ValueError, OverflowError, OSError):
+        return None
+
+
+def credit_balance(value: Any) -> str | None:
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        return None
+    try:
+        balance = Decimal(str(value))
+        if balance.is_finite() and balance >= 0 and balance.adjusted() < 20 and balance.as_tuple().exponent >= -20:
+            return format(balance, "f")
+    except InvalidOperation:
+        pass
+    return None
+
+
+@dataclass(frozen=True)
 class Account:
     key: str
     email: str = ""
@@ -31,9 +61,17 @@ class Account:
     refresh_http_status: int | None = None
     last_success_at: datetime | None = None
 
+    credits: str | None = None
+    reset_credits: int | None = None
+    reset_cards: tuple[ResetCard, ...] = ()
+
+    @property
+    def has_data(self) -> bool:
+        return bool(self.windows or self.reset_cards) or self.credits is not None or self.reset_credits is not None
+
     @property
     def stale(self) -> bool:
-        return bool(self.windows) and (self.refresh_status != "ok" or self.source == "cache")
+        return self.has_data and (self.refresh_status != "ok" or self.source == "cache")
 
 
 @dataclass(frozen=True)
@@ -77,6 +115,14 @@ def parse_accounts(document: Any) -> tuple[Account, ...]:
         keys.add(key)
         usage = item.get("usage") if isinstance(item.get("usage"), dict) else {}
         refresh = usage.get("refresh") if isinstance(usage.get("refresh"), dict) else {}
+        credits = usage.get("credits") if isinstance(usage.get("credits"), dict) else {}
+        balance = "UNLIMITED" if credits.get("unlimited") is True else credit_balance(credits.get("balance"))
+        count = usage.get("reset_credits")
+        count = count if type(count) is int and count >= 0 else None
+        raw_cards = usage.get("reset_credit")
+        cards = tuple(ResetCard(text(card.get("title"), "Reset card"), text(card.get("status"), "unknown"),
+                                expiry_timestamp(card.get("expires_at")))
+                      for card in raw_cards if isinstance(card, dict)) if isinstance(raw_cards, list) else ()
         windows = []
         for field in ("primary", "secondary"):
             raw = usage.get(field)
@@ -90,6 +136,7 @@ def parse_accounts(document: Any) -> tuple[Account, ...]:
         accounts.append(Account(
             key=key, email=text(item.get("email")), alias=text(item.get("alias")),
             plan=text(item.get("plan"), "UNKNOWN") or "UNKNOWN", active=item.get("active") is True,
+            credits=balance, reset_credits=count, reset_cards=cards,
             windows=tuple(windows), source=text(usage.get("source"), "none"),
             updated_at=number(usage.get("updated_at")), refresh_status=text(refresh.get("status"), "unknown"),
             refresh_http_status=refresh.get("http_status") if type(refresh.get("http_status")) is int else None,
@@ -113,8 +160,9 @@ class AccountStore:
             elif old:
                 account = replace(
                     account, windows=old.windows or account.windows,
-                    source="cache" if old.windows else account.source,
-                    updated_at=old.updated_at if old.windows else account.updated_at,
+                    credits=old.credits, reset_credits=old.reset_credits, reset_cards=old.reset_cards,
+                    source="cache" if old.has_data else account.source,
+                    updated_at=old.updated_at if old.has_data else account.updated_at,
                     last_success_at=old.last_success_at,
                 )
             merged.append(account)

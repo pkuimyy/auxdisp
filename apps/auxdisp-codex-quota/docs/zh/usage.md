@@ -105,6 +105,12 @@ auxdisp-codex-quota run --headless real-accounts.png --duration 65
 
 周期按分钟数匹配，不依赖 primary/secondary 顺序。API ERROR 可能来自整个命令或当前账户刷新失败；历史只保存在当前运行进程的内存中，重新启动不会恢复额度快照。LAST OK 是整体请求成功时间，不是每个账户的 `usage.updated_at`。
 
-CREDITS / RESET CARDS / NEXT EXPIRY 固定为 `N/A`，尚未接入数据。10 格条按剩余值向上取整；剩余百分比最多两位小数。
+额度表的 `RESET AT` 显示本机时区的重置日期与时间，`RESET IN` 显示剩余时长；到达重置时间后显示 `DUE`，等待下一次采集确认实际额度。10 格条按剩余值向上取整；剩余百分比最多两位小数。
+
+屏幕不显示 `CREDITS`。`RESET CARDS` 读取 `usage.reset_credits`，有效的零值显示 `0`，缺失或无效值显示 `N/A`，不根据卡片明细推测数量。
+
+卡片明细读取 `usage.reset_credit`，保留每张卡的名称、状态、到期日期时间（`EXPIRES AT`）和剩余时长（`EXPIRES IN`）。按到期时间从近到远排序，缺少有效到期时间的卡放在最后并显示 `--`；已过期显示 `EXPIRED`。每页最多三张，多页会在一个账户轮播周期内自动轮换；右侧用 `RESET CARDS PAGES 1/1` 标识卡片页码，底部用 `ACCOUNT 1/3` 标识账户序号与总数。卡片翻页只改变卡片区，不切换账户或改变上方额度条；账户仍按配置的轮播周期切换，额度采集和倒计时独立更新。没有明细时显示 `NO CARD DETAILS` 或 `N/A`，不代表卡片数量为零。
+
+剩余时长使用天／小时或小时／分钟，最后不足一分钟显示 `1m`。倒计时随画面更新，不会自动使用卡片。刷新失败时保留历史额度和卡片并标记 `STALE`，成功刷新后替换历史数据。
 
 开发环境、测试和独立构建请见 [本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)；异常检查见 [排障](troubleshooting.md).
