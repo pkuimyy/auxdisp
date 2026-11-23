@@ -29,7 +29,7 @@ def build_parser():
         "restart": "Restart and reload configuration",
         "status": "Show process, display, and background task status",
         "run": "Run in the foreground; Ctrl+C stops and turns the display off",
-        "preview": "Save a synthetic PNG preview without accounts or USB",
+        "preview": "Save a PNG without USB; uses synthetic data unless --live is set",
         "uninstall-service": "Stop and remove the background task; keep configuration and logs",
     }
     for name, description in descriptions.items():
@@ -39,6 +39,8 @@ def build_parser():
         if name == "status":
             command.add_argument("--json", action="store_true", help="print structured diagnostic JSON")
         if name == "preview":
+            command.add_argument("--live", action="store_true",
+                                 help="collect real accounts once using configuration; exports the first account")
             command.add_argument(
                 "--output", type=Path, default=Path("auxdisp-codex-quota-preview.png"), metavar="PATH",
                 help="PNG file (default: ./auxdisp-codex-quota-preview.png); replaces an existing file",
@@ -90,14 +92,28 @@ def main(argv=None):
         parser.error(f"Configuration error: {exc}")
     logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(message)s")
     if args.command == "preview":
+        collector = None
         try:
             path = args.output.resolve()
-            write_preview(path, settings)
-            print(f"Synthetic preview saved: {path}")
+            if args.live:
+                collector = build_collector(settings.executable, settings.timeout_seconds, settings.wsl_distribution)
+                write_preview(path, settings, accounts=collector.collect())
+            else:
+                write_preview(path, settings)
+            print(f"{'Live' if args.live else 'Synthetic'} preview saved: {path}")
             return 0
-        except (ValueError, OSError, DataError):
+        except DataError as exc:
+            logging.error("Could not export preview: %s", exc)
+            return 1
+        except KeyboardInterrupt:
+            logging.info("Preview export cancelled")
+            return 130
+        except (ValueError, OSError):
             logging.error("Could not save preview PNG; check the output path and write permissions")
             return 1
+        finally:
+            if collector is not None:
+                collector.close()
     collector = None
     output = None
     try:

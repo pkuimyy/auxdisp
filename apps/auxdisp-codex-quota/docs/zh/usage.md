@@ -89,13 +89,14 @@ unlimited_windows = [300]
 auxdisp-codex-quota preview
 auxdisp-codex-quota preview --output .\images\preview.png
 auxdisp-codex-quota preview --config .\settings.toml
+auxdisp-codex-quota preview --live --config .\settings.toml --output .\images\live.png
 ```
 
-`preview` 只用包内合成账户生成 1280×720 PNG，不调用 codex-auth、USB 或后台任务，也不打开浏览器。默认选择首个合成账户与第一张卡片页，时钟和倒计时使用生成时刻。
+`preview` 默认使用包内合成账户生成 1280×720 PNG，不调用 codex-auth。添加 `--live` 后，按配置调用 codex-auth 采集一次真实账户；设置 `collector.wsl_distribution` 时使用 WSL 数据源。两种模式均不访问 USB、不操作后台任务，也不打开浏览器，可以在显示实例运行期间使用。图片选择返回列表中的首个账户与第一张卡片页，时钟和倒计时使用生成时刻。采集成功但账户列表为空时，生成 NO ACCOUNTS 图片。
 
-默认输出到命令执行时当前目录中的 `auxdisp-codex-quota-preview.png`；`--output` 可指定相对或绝对文件路径，必要时创建父目录。同名文件会被替换；写入失败返回非零退出码，并保留原文件。完成后输出模拟数据说明和文件绝对路径。
+默认输出到命令执行时当前目录中的 `auxdisp-codex-quota-preview.png`；`--output` 可指定相对或绝对文件路径，必要时创建父目录。同名文件会被替换；采集或写入失败返回非零退出码，并保留原文件。完成后输出示例或真实数据说明和文件绝对路径。真实图片可能包含账户身份与配额信息，分享前请检查。采集失败会报告错误码，不会回退为示例数据。
 
-`--config` 使用指定配置中的渲染设置；未指定时遵循用户配置文件和内置默认值的优先级。预览不受配置中的采集命令、亮度或 USB 设置影响。测试 fixture、错误模拟和持续 PNG 输出属于开发工具，见[本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。
+`--config` 使用指定配置中的渲染设置，`--live` 还会使用其中的采集命令、发行版与超时设置；未指定时遵循用户配置文件和内置默认值的优先级。两种模式均不受亮度或 USB 设置影响。测试 fixture、错误模拟和持续 PNG 输出属于开发工具，见[本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。
 
 ## WSL 数据源
 

@@ -2,6 +2,12 @@
 
 [中文版](../zh/CHANGELOG.md)
 
+### 0.1.5
+
+- Support a configured WSL distribution as the codex-auth data source, resolving and baking collection paths at startup and forwarding proxy settings.
+- Cancel the active WSL collection process group on stop, restart, or cancellation, and report normal and forced timeout expiry consistently.
+- Add `preview --live` to export the first real account to PNG without a display; keep synthetic data as the default and preserve existing images on failure.
+
 ### 0.1.4
 
 - Display reset-card counts and per-card status, expiry time, and time remaining; rotate card pages independently and label account and card-page counters explicitly.

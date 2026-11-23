@@ -53,6 +53,8 @@ Without hardware, generate a synthetic preview:
 auxdisp-codex-quota preview
 ```
 
+Use `preview --live` to export real account quotas from the configured source without a display; the default still uses synthetic data. See [PNG preview](usage.md#png-preview).
+
 The default preview is `auxdisp-codex-quota-preview.png` in the current directory, replacing an existing file; use `preview --output <path>` to choose a file. Use `auxdisp-codex-quota run` for foreground operation and Ctrl+C to exit and attempt to turn off the display. Omitting the subcommand shows help. Foreground and background Windows runtimes share an instance lock, so `stop` before foreground debugging.
 
 ## Background operation and updates

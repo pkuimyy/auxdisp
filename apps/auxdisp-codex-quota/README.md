@@ -53,6 +53,8 @@ auxdisp-codex-quota stop
 auxdisp-codex-quota preview
 ```
 
+添加 `preview --live` 可按配置导出真实账户配额，无需连接屏幕；默认仍使用示例数据。详见[PNG 预览](https://github.com/pkuimyy/auxdisp/blob/main/apps/auxdisp-codex-quota/docs/zh/usage.md#png-预览)。
+
 预览默认保存到当前目录的 `auxdisp-codex-quota-preview.png`，同名文件会被替换；可用 `preview --output <路径>` 指定文件。前台运行用 `auxdisp-codex-quota run`，Ctrl+C 退出并尝试熄屏；无子命令仅显示帮助。Windows 前台和后台共享单实例锁，需要先 `stop` 后前台调试。
 
 ## 后台运行与更新

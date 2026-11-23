@@ -89,13 +89,14 @@ Policies match stable IDs and accept 300 / 10080 minutes. Unlimited quotas are n
 auxdisp-codex-quota preview
 auxdisp-codex-quota preview --output .\images\preview.png
 auxdisp-codex-quota preview --config .\settings.toml
+auxdisp-codex-quota preview --live --config .\settings.toml --output .\images\live.png
 ```
 
-`preview` uses bundled synthetic accounts to generate a 1280×720 PNG. It never invokes codex-auth, USB, background tasks, or a browser. It selects the first synthetic account and first card page, using the generation time for the clock and countdowns.
+`preview` generates a 1280×720 PNG using bundled synthetic accounts by default, without invoking codex-auth. Add `--live` to collect real accounts once through the configured codex-auth; `collector.wsl_distribution` selects the WSL data source when set. Neither mode uses USB, background tasks, or a browser, and either can run while the display runtime is active. The image selects the first returned account and first card page, using the generation time for the clock and countdowns. A successful empty account list produces a NO ACCOUNTS image.
 
-The default output is `auxdisp-codex-quota-preview.png` in the command's current directory. `--output` accepts a relative or absolute file path and creates parent directories as needed. Existing files are replaced; write failures return a nonzero exit code and preserve the original file. Completion output identifies the synthetic data and the absolute output path.
+The default output is `auxdisp-codex-quota-preview.png` in the command's current directory. `--output` accepts a relative or absolute file path and creates parent directories as needed. Existing files are replaced; collection or write failures return a nonzero exit code and preserve the original file. Completion output identifies synthetic or live data and the absolute output path. Live images can contain account identities and quota information; review them before sharing. Collection failures report an error code and do not fall back to synthetic data.
 
-`--config` selects rendering settings; otherwise the normal user-configuration and built-in-default priority applies. Collection commands, brightness, and USB settings do not affect offline preview. Fixtures, error simulation, and continuous PNG output belong to the developer tools; see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md).
+`--config` selects rendering settings and, with `--live`, the executable, distribution, and collection timeout; otherwise the normal user-configuration and built-in-default priority applies. Brightness and USB settings do not affect either mode. Fixtures, error simulation, and continuous PNG output belong to the developer tools; see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md).
 
 ## WSL data source
 

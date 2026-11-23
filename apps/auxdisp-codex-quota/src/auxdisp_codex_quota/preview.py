@@ -1,4 +1,4 @@
-"""Synthetic data and a single offline PNG, with no runtime or device access."""
+"""Render synthetic or supplied accounts to a single PNG without device access."""
 
 from datetime import datetime
 from importlib.resources import files
@@ -21,9 +21,10 @@ class FixtureCollector:
         pass
 
 
-def write_preview(path, settings, *, now=None):
+def write_preview(path, settings, *, accounts=None, now=None):
     now = now or datetime.now().astimezone()
-    accounts = FixtureCollector().collect()
+    if accounts is None:
+        accounts = FixtureCollector().collect()
     store = AccountStore()
     store.success(accounts, now)
     key = accounts[0].key if accounts else None

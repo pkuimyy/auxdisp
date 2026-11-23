@@ -11,7 +11,7 @@ import pytest
 
 from auxdisp_codex_quota import cli
 from auxdisp_codex_quota.config import Settings
-from auxdisp_codex_quota.model import AccountStore, parse_accounts
+from auxdisp_codex_quota.model import AccountStore, DataError, parse_accounts
 from auxdisp_codex_quota.preview import write_preview
 from auxdisp_codex_quota.render import Renderer, make_page, save_preview
 
@@ -112,6 +112,62 @@ def test_preview_starts_at_first_card_page_even_late_in_rotation(tmp_path, docum
     expected = Renderer(Settings()).render(make_page(store.snapshot, accounts[0].key, now, Settings(), card_page_index=0))
     assert Image.open(path).tobytes() == expected.tobytes()
     assert make_page(store.snapshot, accounts[0].key, now, Settings()).card_page == "2/2"
+
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_live_preview_uses_configured_source_without_usb_or_examples(tmp_path, document, monkeypatch, capsys, empty):
+    forbid_runtime(monkeypatch)
+    config = tmp_path / "settings.toml"
+    config.write_text('[collector]\nwsl_distribution = "Ubuntu-24.04"\n'
+                      'executable = "custom-codex-auth"\ntimeout_seconds = 30\n', encoding="utf-8")
+    accounts = () if empty else parse_accounts(document)
+    collector = Mock()
+    collector.collect.return_value = accounts
+    factory = Mock(return_value=collector)
+    monkeypatch.setattr(cli, "build_collector", factory)
+    monkeypatch.setattr("auxdisp_codex_quota.preview.FixtureCollector",
+                        Mock(side_effect=AssertionError("Live export must not fall back to examples")))
+    now = datetime(2026, 11, 10, 20, 0, 14, tzinfo=timezone.utc)
+    monkeypatch.setattr(cli, "write_preview",
+                        lambda path, settings, **kwargs: write_preview(path, settings, now=now, **kwargs))
+    path = tmp_path / "live.png"
+    assert cli.main(["preview", "--live", "--config", str(config), "--output", str(path)]) == 0
+    factory.assert_called_once_with("custom-codex-auth", 30, "Ubuntu-24.04")
+    collector.collect.assert_called_once()
+    collector.close.assert_called_once()
+    store = AccountStore()
+    store.success(accounts, now)
+    page = make_page(store.snapshot, accounts[0].key if accounts else None, now, Settings(), card_page_index=0)
+    with Image.open(path) as image:
+        assert image.tobytes() == Renderer(Settings()).render(page).tobytes()
+    assert "Live preview saved" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(("error", "status"), [
+    (DataError("TIMEOUT"), 1), (OSError("PRIVATE_DETAILS"), 1), (KeyboardInterrupt(), 130),
+])
+def test_live_preview_failure_preserves_existing_file_and_closes_collector(tmp_path, monkeypatch, caplog, error, status):
+    forbid_runtime(monkeypatch)
+    collector = Mock()
+    collector.collect.side_effect = error
+    monkeypatch.setattr(cli, "build_collector", Mock(return_value=collector))
+    path = tmp_path / "live.png"
+    path.write_bytes(b"previous image")
+    assert cli.main(["preview", "--live", "--output", str(path)]) == status
+    assert path.read_bytes() == b"previous image"
+    collector.close.assert_called_once()
+    assert "PRIVATE_DETAILS" not in caplog.text
+    if isinstance(error, DataError):
+        assert "TIMEOUT" in caplog.text
+
+
+def test_live_preview_resolution_failure_does_not_write_file(tmp_path, monkeypatch, caplog):
+    forbid_runtime(monkeypatch)
+    monkeypatch.setattr(cli, "build_collector", Mock(side_effect=DataError("WSL_RESOLVE_FAILED")))
+    path = tmp_path / "live.png"
+    assert cli.main(["preview", "--live", "--output", str(path)]) == 1
+    assert not path.exists()
+    assert "WSL_RESOLVE_FAILED" in caplog.text
 
 
 def test_preview_replacement_failure_preserves_old_file(tmp_path, monkeypatch):
