@@ -9,6 +9,7 @@ import sys
 from xml.etree import ElementTree as ET
 
 from . import __version__
+from .collector import WslLaunch
 from .task_adapter import MARKER
 from .win32 import ServiceError
 
@@ -20,25 +21,43 @@ class TaskSpec:
     sid: str
     python: Path
     config: Path
-    executable: Path
+    executable: Path | None
     working_directory: Path
+    wsl: WslLaunch | None = None
+
+    def __post_init__(self):
+        # Positional construction accepts a launch resolved inside WSL in the
+        # executable slot; normalize it into the dedicated field.
+        if isinstance(self.executable, WslLaunch):
+            if self.wsl is not None:
+                raise ValueError("Pass either a Windows executable or a WSL launch, not both")
+            object.__setattr__(self, "wsl", self.executable)
+            object.__setattr__(self, "executable", None)
 
     @classmethod
     def installed(cls, sid, config, executable, working_directory):
         python = Path(sys.executable).resolve().with_name("pythonw.exe")
         if not python.is_file():
             raise ServiceError("pythonw.exe is unavailable in this Python installation")
+        if isinstance(executable, WslLaunch):
+            return cls(sid, python, config.resolve(), executable, working_directory.resolve())
         return cls(sid, python, config.resolve(), Path(executable).resolve(), working_directory.resolve())
 
     @property
     def arguments(self):
-        return subprocess.list2cmdline([
+        arguments = [
             # -I also implies -s, hiding ordinary pip --user installations.
             # Keep environment (-E) and working-directory (-P) isolation while
             # allowing the interpreter's normal user site and its dependencies.
             "-E", "-P", "-m", "auxdisp_codex_quota._background", "--config", str(self.config),
-            "--executable", str(self.executable),
-        ])
+        ]
+        if self.wsl is not None:
+            arguments += ["--executable", self.wsl.executable,
+                          "--wsl-distribution", self.wsl.distribution,
+                          "--wsl-node-bin", self.wsl.node_bin]
+        else:
+            arguments += ["--executable", str(self.executable)]
+        return subprocess.list2cmdline(arguments)
 
     @property
     def description(self):
@@ -47,7 +66,10 @@ class TaskSpec:
         return MARKER + " " + hashlib.sha256(identity.encode()).hexdigest()
 
     def xml(self):
-        if not all(path.is_absolute() for path in (self.python, self.config, self.executable, self.working_directory)):
+        paths = (self.python, self.config, self.working_directory)
+        if self.wsl is None:
+            paths += (self.executable,)
+        if not all(path.is_absolute() for path in paths):
             raise ServiceError("Scheduled task paths must be absolute")
         ET.register_namespace("", NS)
         root = ET.Element(f"{{{NS}}}Task", version="1.2")

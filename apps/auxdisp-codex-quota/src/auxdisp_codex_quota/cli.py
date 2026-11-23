@@ -5,7 +5,7 @@ import json
 import logging
 from pathlib import Path
 
-from .collector import CollectionWorker, Collector
+from .collector import CollectionWorker, build_collector
 from .config import load_settings
 from .display import DisplayAdapter, DisplayWorker
 from .host import run_host
@@ -101,7 +101,7 @@ def main(argv=None):
     collector = None
     output = None
     try:
-        collector = Collector(settings.executable, settings.timeout_seconds)
+        collector = build_collector(settings.executable, settings.timeout_seconds, settings.wsl_distribution)
         output = DisplayWorker(DisplayAdapter(settings.brightness, settings.reconnect_seconds))
         runtime = Runtime(settings, CollectionWorker(collector), Renderer(settings), output)
         try:

@@ -18,7 +18,7 @@ import pytest
 
 from auxdisp_codex_quota import cli
 from auxdisp_codex_quota import _background as background
-from auxdisp_codex_quota.collector import CollectionWorker, Collector
+from auxdisp_codex_quota.collector import CollectionWorker, Collector, WslLaunch
 from auxdisp_codex_quota.config import Settings, load_settings
 from auxdisp_codex_quota.display import DisplayWorker, FileAdapter
 from auxdisp_codex_quota.host import HealthWriter, file_logging, run_host
@@ -149,6 +149,54 @@ def test_legacy_task_is_migrated_without_deleting_it(managed, command):
     assert operations.index("disable") < operations.index("register") < operations.index("run")
     assert scheduler.task["description"] != old_description
     assert "delete" not in events
+
+
+def test_wsl_start_bakes_the_resolved_launch_into_task_identity(managed, monkeypatch):
+    controller, _, _, scheduler = managed
+    controller.paths.config.parent.mkdir(parents=True, exist_ok=True)
+    controller.paths.config.write_text('[collector]\nwsl_distribution = "Ubuntu-24.04"\n', encoding="utf-8")
+    launch = WslLaunch("Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin")
+    monkeypatch.setattr("auxdisp_codex_quota.service.resolve_wsl_launch", lambda distribution, name: launch)
+    assert controller.execute("start")["process_running"]
+    baked = read_state(controller.paths.state.parent / "launch.json")
+    assert (baked["wsl_distribution"], baked["wsl_executable"], baked["wsl_node_bin"]) == (
+        "Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin")
+    assert "--wsl-distribution Ubuntu-24.04" in scheduler.task["xml"]
+
+
+def test_wsl_start_reuses_a_matching_previous_bake_when_resolution_fails(managed, monkeypatch):
+    controller, _, _, scheduler = managed
+    controller.paths.config.parent.mkdir(parents=True, exist_ok=True)
+    controller.paths.config.write_text('[collector]\nwsl_distribution = "Ubuntu-24.04"\n', encoding="utf-8")
+    launch_path = controller.paths.state.parent / "launch.json"
+    write_state(launch_path, {"config": str(controller.paths.config), "requested_executable": "codex-auth",
+                              "wsl_distribution": "Ubuntu-24.04", "wsl_executable": "/old/bin/codex-auth",
+                              "wsl_node_bin": "/old/bin"})
+
+    def unavailable(distribution, name):
+        raise DataError("WSL_RESOLVE_FAILED")
+
+    monkeypatch.setattr("auxdisp_codex_quota.service.resolve_wsl_launch", unavailable)
+    assert controller.execute("start")["process_running"]
+    assert read_state(launch_path)["wsl_executable"] == "/old/bin/codex-auth"
+    assert "--executable /old/bin/codex-auth" in scheduler.task["xml"]
+
+
+def test_wsl_start_rejects_a_previous_bake_for_a_different_source(managed, monkeypatch):
+    controller, _, _, _ = managed
+    controller.paths.config.parent.mkdir(parents=True, exist_ok=True)
+    controller.paths.config.write_text('[collector]\nwsl_distribution = "Ubuntu-24.04"\n', encoding="utf-8")
+    launch_path = controller.paths.state.parent / "launch.json"
+    write_state(launch_path, {"config": str(controller.paths.config), "requested_executable": "codex-auth",
+                              "wsl_distribution": "Ubuntu-22.04", "wsl_executable": "/old/bin/codex-auth",
+                              "wsl_node_bin": "/old/bin"})
+
+    def unavailable(distribution, name):
+        raise DataError("WSL_RESOLVE_FAILED")
+
+    monkeypatch.setattr("auxdisp_codex_quota.service.resolve_wsl_launch", unavailable)
+    with pytest.raises(LifecycleError):
+        controller.execute("start")
 
 
 def test_environment_upgrade_stops_old_instance_then_updates_one_task(managed):
@@ -648,7 +696,7 @@ def test_cli_management_never_collects_accounts_or_opens_usb(monkeypatch, capsys
     controller = Mock()
     controller.execute.return_value = {"registered": True, "process_running": True}
     monkeypatch.setattr(cli, "ServiceController", lambda: controller)
-    monkeypatch.setattr(cli, "Collector", lambda *a: pytest.fail("real collector accessed"))
+    monkeypatch.setattr(cli, "build_collector", lambda *a, **k: pytest.fail("real collector accessed"))
     monkeypatch.setattr(cli, "DisplayWorker", lambda *a: pytest.fail("USB accessed"))
     for command in ("start", "stop", "status", "restart", "uninstall-service"):
         assert cli.main([command]) == 0
@@ -775,6 +823,34 @@ def test_private_background_entry_masks_config_failure(tmp_path, monkeypatch):
     assert background.main(["--config", str(config), "--executable", sys.executable]) == 1
     text = AppPaths.current().log.read_text(encoding="utf-8")
     assert "PRIVATE_CONFIG_TOKEN" not in text and "Background host failed" in text
+
+
+def test_private_background_entry_accepts_a_baked_wsl_launch(tmp_path, monkeypatch):
+    config = tmp_path / "settings.toml"
+    config.write_text("", encoding="utf-8")
+    captured = []
+
+    def fake_collector(executable, timeout, wsl=None):
+        captured.append((executable, timeout, wsl))
+        return FixtureCollector()
+
+    monkeypatch.setattr(background, "Collector", fake_collector)
+    monkeypatch.setattr(background, "DisplayAdapter", lambda *args: FileAdapter(tmp_path / "background.png"))
+    monkeypatch.setattr(background, "run_host", lambda runtime, **kwargs: run_host(
+        runtime, 0.25, ipc=FakeIPC([]), **kwargs,
+    ))
+    assert background.main(["--config", str(config), "--executable", "/home/u/bin/codex-auth",
+                             "--wsl-distribution", "Ubuntu-24.04", "--wsl-node-bin", "/home/u/bin"]) == 0
+    assert captured == [("/home/u/bin/codex-auth", 20.0, WslLaunch(
+        "Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin"))]
+
+
+def test_private_background_entry_rejects_relative_or_partial_launches(tmp_path):
+    config = tmp_path / "settings.toml"
+    config.write_text("", encoding="utf-8")
+    assert background.main(["--config", str(config), "--executable", "codex-auth"]) == 1
+    assert background.main(["--config", str(config), "--executable", "codex-auth",
+                             "--wsl-distribution", "Ubuntu-24.04"]) == 1
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Win32 primitives require Windows")

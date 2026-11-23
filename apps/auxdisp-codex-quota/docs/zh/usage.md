@@ -23,6 +23,7 @@ auxdisp-codex-quota restart --config C:\Users\Me\auxdisp-config.toml
 | 设置 | 默认值 |
 |---|---|
 | `collector.executable` | `codex-auth` |
+| `collector.wsl_distribution` | 空字符串；读取 Windows 侧 codex-auth |
 | `collector.refresh_seconds` | 60 s |
 | `collector.timeout_seconds` | 20 s |
 | `rotation.seconds` | 15 s |
@@ -96,9 +97,28 @@ auxdisp-codex-quota preview --config .\settings.toml
 
 `--config` 使用指定配置中的渲染设置；未指定时遵循用户配置文件和内置默认值的优先级。预览不受配置中的采集命令、亮度或 USB 设置影响。测试 fixture、错误模拟和持续 PNG 输出属于开发工具，见[本地开发](https://github.com/pkuimyy/auxdisp/blob/main/docs/zh/development.md)。
 
+## WSL 数据源
+
+codex-auth 常与 WSL 内的 codex CLI 一起使用。在 `[collector]` 配置发行版名称后，应用不再调用 Windows 侧的 codex-auth，而是把 WSL 内的 codex-auth 作为唯一数据源：
+
+```toml
+[collector]
+wsl_distribution = "Ubuntu-24.04"
+timeout_seconds = 30
+```
+
+- 启动（`start`、`restart`、前台 `run`）时，应用以发行版的默认用户运行交互登录 shell（`bash -lic`）解析 `codex-auth` 与 `node` 的绝对路径，并固化进任务参数；`restart` 会重新解析。nvm 等版本管理器升级 Node 后路径会变化，重新 `restart` 即可。
+- 采集命令仍只执行 `codex-auth list --api --json`，但发生在发行版内部，读取的是 WSL 侧的账户数据；Windows 侧的账户不会出现。
+- 应用会把自身环境中的 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 转发给发行版，并设置 `NODE_USE_ENV_PROXY=1`（Node 24 及以上需要该变量才会让请求走代理）。无代理环境不需要这些变量。
+- 发行版需要 `bash` 和 coreutils 的 `timeout`（Ubuntu 等主流发行版默认具备），并已在发行版内安装 codex-auth 与 Node.js。
+- 发行版冷启动有额外延迟，建议 `timeout_seconds` 至少 30 秒；Linux 侧超时与 Windows 侧超时同样显示 `TIMEOUT`。
+- token 的新鲜度仍由 WSL 内实际使用 codex 决定：某账号长期未在 WSL 内以活跃身份运行 codex 时，其 token 过期后显示 STALE，应用不会代为刷新。
+
+相关错误码见[排障](troubleshooting.md)的「WSL 模式错误」。
+
 ## 数据来源与边界
 
-仅执行 `codex-auth list --api --json` ([JSON API schema 1](https://github.com/Loongphy/codex-auth/blob/main/docs/json-api.md))。Windows 官方 npm 包可自动解析原生 exe（含嵌套/扁平布局）；其他安装可显式配置原生路径。
+仅执行 `codex-auth list --api --json` ([JSON API schema 1](https://github.com/Loongphy/codex-auth/blob/main/docs/json-api.md))。Windows 官方 npm 包可自动解析原生 exe（含嵌套/扁平布局）；其他安装可显式配置原生路径。配置 `wsl_distribution` 后，该命令改在 WSL 发行版内执行，见上文「WSL 数据源」。
 
 周期按分钟数匹配，不依赖 primary/secondary 顺序。API ERROR 可能来自整个命令或当前账户刷新失败；历史只保存在当前运行进程的内存中，重新启动不会恢复额度快照。LAST OK 是整体请求成功时间，不是每个账户的 `usage.updated_at`。
 

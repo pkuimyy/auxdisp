@@ -1,5 +1,8 @@
 [collector]
 executable = "codex-auth"
+# Leave empty to use codex-auth on Windows. Set a WSL distribution name (for
+# example "Ubuntu-24.04") to read accounts from codex-auth inside WSL instead.
+wsl_distribution = ""
 refresh_seconds = 60
 timeout_seconds = 20
 

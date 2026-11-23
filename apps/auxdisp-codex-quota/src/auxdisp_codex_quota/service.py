@@ -7,7 +7,7 @@ import time
 import uuid
 from xml.etree import ElementTree as ET
 
-from .collector import resolve_executable
+from .collector import WslLaunch, resolve_executable, resolve_wsl_launch
 from .config import load_settings
 from .model import DataError
 from .paths import AppPaths, select_config
@@ -197,6 +197,29 @@ class ServiceController:
         write_state(self.paths.state.parent / "last-stop.json", result)
         return result
 
+    def _baked_launch(self, selected, settings, launch):
+        """Resolve the collector source at start; reuse a prior bake while unresolvable."""
+        if settings.wsl_distribution:
+            try:
+                return resolve_wsl_launch(settings.wsl_distribution, settings.executable)
+            except DataError:
+                # An already-installed task must survive a temporarily unresolvable source.
+                if (launch.get("config") != str(selected)
+                        or launch.get("requested_executable") != settings.executable
+                        or launch.get("wsl_distribution") != settings.wsl_distribution
+                        or not launch.get("wsl_executable") or not launch.get("wsl_node_bin")):
+                    raise
+                return WslLaunch(settings.wsl_distribution,
+                                 launch["wsl_executable"], launch["wsl_node_bin"])
+        try:
+            return Path(resolve_executable(settings.executable)).resolve()
+        except DataError:
+            # An already-installed task must survive a later shell with a reduced PATH.
+            if (launch.get("config") != str(selected) or launch.get("requested_executable") != settings.executable
+                    or not Path(launch.get("executable", "")).is_file()):
+                raise
+            return Path(launch["executable"])
+
     def _start(self, transition, config=None):
         self.paths.root.mkdir(parents=True, exist_ok=True)
         selected = select_config(config, self.paths)
@@ -210,15 +233,8 @@ class ServiceController:
         settings = load_settings(selected)
         launch_path = self.paths.state.parent / "launch.json"
         launch = read_state(launch_path)
-        try:
-            executable = Path(resolve_executable(settings.executable)).resolve()
-        except DataError:
-            # An already-installed task must survive a later shell with a reduced PATH.
-            if (launch.get("config") != str(selected) or launch.get("requested_executable") != settings.executable
-                    or not Path(launch.get("executable", "")).is_file()):
-                raise
-            executable = Path(launch["executable"])
-        spec = self.spec_factory(self.ipc.sid, selected, executable, self.paths.root)
+        baked = self._baked_launch(selected, settings, launch)
+        spec = self.spec_factory(self.ipc.sid, selected, baked, self.paths.root)
         task = self.scheduler.query()
         changed = (task.get("description") != spec.description
                    or not Path(task.get("python", "")).is_file())
@@ -247,9 +263,16 @@ class ServiceController:
                 self.sleep(0.2)
             if not self.ipc.running():
                 raise ServiceError("Background startup was not confirmed; check logs/service.log and task status")
-        write_state(launch_path, {
-            "config": str(selected), "requested_executable": settings.executable, "executable": str(executable),
-        })
+        if isinstance(baked, WslLaunch):
+            write_state(launch_path, {
+                "config": str(selected), "requested_executable": settings.executable,
+                "wsl_distribution": baked.distribution, "wsl_executable": baked.executable,
+                "wsl_node_bin": baked.node_bin,
+            })
+        else:
+            write_state(launch_path, {
+                "config": str(selected), "requested_executable": settings.executable, "executable": str(baked),
+            })
         return self.status()
 
     def _observe(self, failure=None):

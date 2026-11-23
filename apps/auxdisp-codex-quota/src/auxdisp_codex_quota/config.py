@@ -10,6 +10,7 @@ import tomllib
 @dataclass(frozen=True)
 class Settings:
     executable: str = "codex-auth"
+    wsl_distribution: str = ""
     refresh_seconds: float = 60
     timeout_seconds: float = 20
     rotation_seconds: float = 15
@@ -41,9 +42,11 @@ def load_settings(path: Path | None = None) -> Settings:
         "collector", "rotation", "display", "render", "logging",
     ))
     executable = collector.get("executable", "codex-auth")
+    wsl_distribution = collector.get("wsl_distribution", "")
     font = render.get("font", "")
-    if not isinstance(executable, str) or not executable.strip() or not isinstance(font, str):
-        raise ValueError("Executable and font must be strings; executable must not be empty")
+    if (not isinstance(executable, str) or not executable.strip() or not isinstance(font, str)
+            or not isinstance(wsl_distribution, str)):
+        raise ValueError("Executable, WSL distribution, and font must be strings; executable must not be empty")
     if display.get("orientation", "landscape") != "landscape":
         raise ValueError("Only landscape 1280x720 is supported")
     brightness = display.get("brightness", 30)
@@ -67,6 +70,7 @@ def load_settings(path: Path | None = None) -> Settings:
         unlimited[key] = frozenset(windows)
     return Settings(
         executable=executable,
+        wsl_distribution=wsl_distribution.strip(),
         refresh_seconds=positive(collector.get("refresh_seconds", 60), "refresh_seconds"),
         timeout_seconds=positive(collector.get("timeout_seconds", 20), "timeout_seconds"),
         rotation_seconds=positive(rotation.get("seconds", 15), "rotation.seconds"),

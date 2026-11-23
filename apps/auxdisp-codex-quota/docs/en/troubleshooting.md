@@ -19,7 +19,19 @@ Get-Command codex-auth -All
 codex-auth list --api --json
 ```
 
-Under the same Windows user running this app, follow [codex-auth](https://github.com/Loongphy/codex-auth) to install and configure accounts. Query output contains identities; do not share it. For `COMMAND_NOT_FOUND`, check PATH. `CONFIGURE_NATIVE_CODEX_AUTH_EXE` requires the native exe’s full path in configuration. See [configuration](usage.md) and restart after changes.
+Under the same Windows user running this app, follow [codex-auth](https://github.com/Loongphy/codex-auth) to install and configure accounts. Query output contains identities; do not share it. For `COMMAND_NOT_FOUND`, check PATH. `CONFIGURE_NATIVE_CODEX_AUTH_EXE` requires the native exe’s full path in configuration. See [configuration](usage.md) and restart after changes. With `wsl_distribution` configured, accounts come from the WSL side; see the WSL section below.
+
+## WSL mode errors
+
+With `collector.wsl_distribution` configured, these error codes indicate WSL-side problems:
+
+| Error | Meaning |
+|---|---|
+| `WSL_NOT_INSTALLED` | WSL is not installed on Windows (`wsl.exe` not found) |
+| `WSL_DISTRO_MISSING` | The configured distribution does not exist; verify the name with `wsl -l -q` |
+| `WSL_RESOLVE_FAILED` | The distribution exists, but codex-auth or node cannot be resolved inside it |
+
+For `WSL_RESOLVE_FAILED`, check inside WSL: `bash -lic 'command -v codex-auth; command -v node'` — both must print absolute paths. The distribution needs `bash` and coreutils (including `timeout`). For `TIMEOUT` during collection, verify proxy reachability: the app forwards the Windows-side `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` to WSL and sets `NODE_USE_ENV_PROXY=1` (effective on Node 24 and newer). After nvm upgrades Node, paths change; run `restart` to resolve again. Report redacted error codes if the failure persists.
 
 ## USB not recognized
 

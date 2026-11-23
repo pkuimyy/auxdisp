@@ -50,7 +50,7 @@ def test_unknown_is_not_zero_and_long_unicode_title_is_clipped(document):
 
 
 def test_preview_modes_never_start_collector_or_usb(tmp_path, monkeypatch):
-    monkeypatch.setattr("auxdisp_codex_quota.cli.Collector", lambda *a: (_ for _ in ()).throw(AssertionError("API called")))
+    monkeypatch.setattr("auxdisp_codex_quota.cli.build_collector", lambda *a, **k: (_ for _ in ()).throw(AssertionError("API called")))
     monkeypatch.setattr("auxdisp_codex_quota.cli.DisplayWorker", lambda *a: (_ for _ in ()).throw(AssertionError("USB called")))
     for name in ("dual", "again"):
         path = tmp_path / f"{name}.png"

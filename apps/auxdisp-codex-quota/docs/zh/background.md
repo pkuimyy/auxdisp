@@ -64,7 +64,7 @@ auxdisp-codex-quota start
 executable = 'C:\Tools\codex-auth.exe'
 ```
 
-同一配置先前已成功解析的命令路径会保存在 `state/launch.json`，后续终端 PATH 缩短时仍可复用；切换命令或配置文件时会重新检查。后台运行不使用 SYSTEM 账户，只执行 `list --api --json`，不切换账户或消耗重置卡。
+同一配置先前已成功解析的命令路径会保存在 `state/launch.json`，后续终端 PATH 缩短时仍可复用；切换命令或配置文件时会重新检查。配置 `wsl_distribution` 时保存的是发行版内解析出的绝对路径，复用规则相同。后台运行不使用 SYSTEM 账户，只执行 `list --api --json`，不切换账户或消耗重置卡。
 
 `service.log` 每个文件最多 1 MiB，保留 3 个备份。日志和状态不保存认证令牌、原始账户 JSON、邮箱或账户名称。状态只保存实例标识、进程号、健康心跳、最近成功采集时间和最近观察到的 USB 连接状态；进程号仅供诊断，不用于终止进程。
 

@@ -20,7 +20,7 @@ def forbid_runtime(monkeypatch):
     def fail(*args, **kwargs):
         pytest.fail("Preview/help must not use accounts, USB, tasks, or a browser")
 
-    for name in ("Collector", "CollectionWorker", "DisplayAdapter", "DisplayWorker", "ServiceController", "run_host"):
+    for name in ("build_collector", "CollectionWorker", "DisplayAdapter", "DisplayWorker", "ServiceController", "run_host"):
         monkeypatch.setattr(cli, name, fail)
     monkeypatch.setattr(webbrowser, "open", fail)
 
@@ -139,7 +139,7 @@ def test_status_text_and_json_distinguish_unknown_usb(monkeypatch, capsys):
 
 def test_foreground_ctrl_c_is_handled_and_resources_closed(monkeypatch):
     collector, runtime, output = Mock(), Mock(), Mock()
-    monkeypatch.setattr(cli, "Collector", Mock(return_value=collector))
+    monkeypatch.setattr(cli, "build_collector", Mock(return_value=collector))
     monkeypatch.setattr(cli, "CollectionWorker", Mock())
     monkeypatch.setattr(cli, "DisplayWorker", Mock(return_value=output))
     monkeypatch.setattr(cli, "DisplayAdapter", Mock())

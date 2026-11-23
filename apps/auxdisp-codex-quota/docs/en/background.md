@@ -64,7 +64,7 @@ Configuration priority is explicit `--config`, the current user's data-directory
 executable = 'C:\Tools\codex-auth.exe'
 ```
 
-A successfully resolved command is recorded in `state/launch.json` for reuse when a later shell has a reduced PATH. Changing the command or configuration file requires a fresh check. Collection runs under the current user, never SYSTEM, and only executes `list --api --json`.
+A successfully resolved command is recorded in `state/launch.json` for reuse when a later shell has a reduced PATH. Changing the command or configuration file requires a fresh check. With `wsl_distribution` configured, the recorded paths are those resolved inside the distribution, under the same reuse rule. Collection runs under the current user, never SYSTEM, and only executes `list --api --json`.
 
 File logs rotate at 1 MiB with three backups. Logs and health state contain no tokens, raw account JSON, email addresses, or account names. State records only an instance identifier, diagnostic PID, heartbeat, last successful collection time, and observed USB connection state. The PID is never a termination target.
 

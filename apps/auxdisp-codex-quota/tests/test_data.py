@@ -150,6 +150,7 @@ def test_five_accounts_rotate_without_fixed_account_count(document):
 
 @pytest.mark.parametrize("body", [
     "[collector]\nrefresh_seconds=0", "[collector]\ntimeout_seconds=nan",
+    "[collector]\nwsl_distribution=24", "[collector]\nwsl_distribution=true",
     "[rotation]\nseconds=-1", "[display]\nbrightness=101", "[display]\nbrightness=true",
     '[display]\norientation="portrait"', '[render]\nthresholds=[25,50,75]',
     '[accounts.a]\nunlimited_windows=[42]', '[logging]\nlevel="unknown"',
@@ -166,6 +167,13 @@ def test_example_configuration_loads_and_has_safe_defaults():
     settings = load_settings(Path(__file__).parents[1] / "config.example.toml")
     assert (settings.refresh_seconds, settings.rotation_seconds, settings.timeout_seconds) == (60, 15, 20)
     assert settings.brightness == 30
+
+
+def test_wsl_distribution_is_parsed_stripped_and_defaults_to_empty(tmp_path):
+    path = tmp_path / "settings.toml"
+    path.write_text('[collector]\nwsl_distribution = " Ubuntu-24.04 "\n', encoding="utf-8")
+    assert load_settings(path).wsl_distribution == "Ubuntu-24.04"
+    assert Settings().wsl_distribution == ""
 
 
 def test_resources_parse_multiple_cards_and_preserve_on_refresh_failure(document):

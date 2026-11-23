@@ -23,6 +23,7 @@ auxdisp-codex-quota restart --config C:\Users\Me\auxdisp-config.toml
 | Setting | Default |
 |---|---|
 | `collector.executable` | `codex-auth` |
+| `collector.wsl_distribution` | Empty; read codex-auth on Windows |
 | `collector.refresh_seconds` | 60 s |
 | `collector.timeout_seconds` | 20 s |
 | `rotation.seconds` | 15 s |
@@ -96,9 +97,28 @@ The default output is `auxdisp-codex-quota-preview.png` in the command's current
 
 `--config` selects rendering settings; otherwise the normal user-configuration and built-in-default priority applies. Collection commands, brightness, and USB settings do not affect offline preview. Fixtures, error simulation, and continuous PNG output belong to the developer tools; see [local development](https://github.com/pkuimyy/auxdisp/blob/main/docs/en/development.md).
 
+## WSL data source
+
+codex-auth is often used together with the codex CLI inside WSL. After setting a distribution name in `[collector]`, the app no longer calls the Windows-side codex-auth and uses the one inside WSL as its single data source:
+
+```toml
+[collector]
+wsl_distribution = "Ubuntu-24.04"
+timeout_seconds = 30
+```
+
+- At startup (`start`, `restart`, or foreground `run`) the app runs an interactive login shell (`bash -lic`) as the distribution's default user to resolve the absolute paths of `codex-auth` and `node`, then bakes them into the task arguments; `restart` resolves them again. Version managers such as nvm change paths on Node upgrades, so run `restart` afterwards.
+- Collection still only executes `codex-auth list --api --json`, but inside the distribution, reading the WSL-side accounts; Windows-side accounts do not appear.
+- The app forwards its own `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` to the distribution and sets `NODE_USE_ENV_PROXY=1` (Node 24 and newer require this variable to honor proxies). Environments without a proxy need none of these.
+- The distribution needs `bash` and coreutils `timeout` (present by default in Ubuntu and other mainstream distributions) plus codex-auth and Node.js installed inside it.
+- A cold distribution start adds latency; set `timeout_seconds` to at least 30 seconds. Linux-side and Windows-side expiries both display `TIMEOUT`.
+- Token freshness still depends on actually using codex inside WSL: an account idle for longer than the token lifetime shows STALE once it expires; the app never refreshes tokens.
+
+For related error codes, see the WSL section in [troubleshooting](troubleshooting.md).
+
 ## Data source and boundaries
 
-Only executes `codex-auth list --api --json` ([JSON API schema 1](https://github.com/Loongphy/codex-auth/blob/main/docs/json-api.md)). Official Windows npm packages resolve their native exe automatically, including nested/flat layouts; other installations can configure a native path explicitly.
+Only executes `codex-auth list --api --json` ([JSON API schema 1](https://github.com/Loongphy/codex-auth/blob/main/docs/json-api.md)). Official Windows npm packages resolve their native exe automatically, including nested/flat layouts; other installations can configure a native path explicitly. With `wsl_distribution` configured, the command runs inside the WSL distribution instead; see "WSL data source" above.
 
 Windows are matched by duration, not primary/secondary order. API ERROR can indicate a failed command or current-account refresh. History stays in the running process’s memory; restarting does not restore quota snapshots. LAST OK is the overall successful request time, not each account’s `usage.updated_at`.
 

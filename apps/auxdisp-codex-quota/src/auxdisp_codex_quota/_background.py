@@ -5,7 +5,7 @@ from dataclasses import replace
 import logging
 from pathlib import Path
 
-from .collector import CollectionWorker, Collector
+from .collector import CollectionWorker, Collector, WslLaunch
 from .config import load_settings
 from .display import DisplayAdapter, DisplayWorker
 from .host import file_logging, run_host
@@ -18,15 +18,25 @@ from .win32 import InstanceBusy
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="auxdisp-codex-quota internal background host")
     parser.add_argument("--config", required=True, type=Path)
-    parser.add_argument("--executable", required=True, type=Path)
+    parser.add_argument("--executable", required=True)
+    parser.add_argument("--wsl-distribution", default="")
+    parser.add_argument("--wsl-node-bin", default="")
     args = parser.parse_args(argv)
     paths = AppPaths.current()
     try:
-        if not args.config.is_absolute() or not args.executable.is_absolute():
+        if not args.config.is_absolute():
             raise ValueError("Absolute paths required")
-        settings = replace(load_settings(args.config), executable=str(args.executable))
-        runtime = Runtime(settings, CollectionWorker(Collector(settings.executable, settings.timeout_seconds)),
-                          Renderer(settings), DisplayWorker(DisplayAdapter(
+        if args.wsl_distribution:
+            # The task bakes the launch resolved at start time; do not re-resolve here.
+            launch = WslLaunch(args.wsl_distribution, args.executable, args.wsl_node_bin)
+        else:
+            if not Path(args.executable).is_absolute():
+                raise ValueError("Absolute paths required")
+            launch = None
+        settings = replace(load_settings(args.config), executable=args.executable)
+        collector = (Collector(args.executable, settings.timeout_seconds, wsl=launch)
+                     if launch is not None else Collector(settings.executable, settings.timeout_seconds))
+        runtime = Runtime(settings, CollectionWorker(collector), Renderer(settings), DisplayWorker(DisplayAdapter(
                               settings.brightness, settings.reconnect_seconds,
                           )))
         run_host(runtime, paths=paths, background=True)

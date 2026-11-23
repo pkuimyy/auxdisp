@@ -19,7 +19,19 @@ Get-Command codex-auth -All
 codex-auth list --api --json
 ```
 
-在运行应用的同一 Windows 用户下，按 [codex-auth](https://github.com/Loongphy/codex-auth) 说明安装并配置账户。命令输出含身份信息，不要公开。应用显示 `COMMAND_NOT_FOUND` 时检查 PATH；`CONFIGURE_NATIVE_CODEX_AUTH_EXE` 表示需在配置中指定原生 exe 的完整路径。配置示例见 [配置指南](usage.md)，修改后 `restart`。
+在运行应用的同一 Windows 用户下，按 [codex-auth](https://github.com/Loongphy/codex-auth) 说明安装并配置账户。命令输出含身份信息，不要公开。应用显示 `COMMAND_NOT_FOUND` 时检查 PATH；`CONFIGURE_NATIVE_CODEX_AUTH_EXE` 表示需在配置中指定原生 exe 的完整路径。配置示例见 [配置指南](usage.md)，修改后 `restart`。配置了 `wsl_distribution` 时账户来自 WSL 侧，见下方「WSL 模式错误」。
+
+## WSL 模式错误
+
+配置 `collector.wsl_distribution` 后，以下错误码表示 WSL 侧的问题：
+
+| 错误 | 含义 |
+|---|---|
+| `WSL_NOT_INSTALLED` | Windows 未安装 WSL（找不到 `wsl.exe`） |
+| `WSL_DISTRO_MISSING` | 配置的发行版不存在；用 `wsl -l -q` 核对名称 |
+| `WSL_RESOLVE_FAILED` | 发行版存在，但无法在其中解析 codex-auth 或 node |
+
+遇到 `WSL_RESOLVE_FAILED` 时在 WSL 内自检：`bash -lic 'command -v codex-auth; command -v node'`，两者都应输出绝对路径。发行版需要 `bash` 与 coreutils（含 `timeout`）。采集期报 `TIMEOUT` 时检查代理可达性：应用会把 Windows 侧的 `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` 转发给 WSL，并设置 `NODE_USE_ENV_PROXY=1`（Node 24 及以上生效）。nvm 升级 Node 后路径变化，执行 `restart` 重新解析。仍失败时附脱敏错误码反馈。
 
 ## USB 无法识别
 

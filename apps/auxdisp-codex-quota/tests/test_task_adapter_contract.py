@@ -15,6 +15,7 @@ import auxdisp_codex_quota
 from importlib.resources import files
 
 from auxdisp_codex_quota import _scheduler_com_worker as worker
+from auxdisp_codex_quota.collector import WslLaunch
 from auxdisp_codex_quota.direct_com import DirectComTaskScheduler
 from auxdisp_codex_quota.scheduler import NS, TaskScheduler, TaskSpec
 from auxdisp_codex_quota.paths import AppPaths
@@ -238,6 +239,21 @@ def test_contract_legacy_identity_and_arguments(adapter, identity):
     assert backend.query()["registered"]
     backend.call("enable")
     assert backend.query()["enabled"]
+
+
+def test_task_spec_carries_a_wsl_launch_without_windows_paths(tmp_path):
+    launch = WslLaunch("Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin")
+    positional = TaskSpec(SID, tmp_path / "pythonw.exe", tmp_path / "config.toml", launch, tmp_path)
+    explicit = TaskSpec(SID, tmp_path / "pythonw.exe", tmp_path / "config.toml", None, tmp_path, wsl=launch)
+    assert positional.arguments == explicit.arguments
+    assert "--executable /home/u/bin/codex-auth" in positional.arguments
+    assert "--wsl-distribution Ubuntu-24.04" in positional.arguments
+    assert "--wsl-node-bin /home/u/bin" in positional.arguments
+    assert positional.executable is None and positional.wsl is launch
+    ET.fromstring(positional.xml())  # the XML stays valid without a Windows executable path
+    windows = TaskSpec(SID, tmp_path / "pythonw.exe", tmp_path / "config.toml",
+                       tmp_path / "codex-auth.exe", tmp_path)
+    assert positional.description != windows.description
 
 
 @pytest.mark.parametrize("operation", ["query", "register", "enable", "disable", "run", "end", "delete"])
