@@ -26,6 +26,28 @@ WSL_RESOLVE_TIMEOUT = 30
 WSL_LIST_TIMEOUT = 15
 WSL_START_GRACE = 25
 
+# GNU timeout creates its process group before starting this shell. Keep a
+# pipe open from Windows: EOF cancels exactly that group, even during startup.
+# read is a bash builtin, so normal cleanup leaves no blocked helper process.
+WSL_SUPERVISOR = '''group=$PPID
+exec 3<&0
+trap ':' TERM
+"$@" </dev/null &
+child=$!
+( while IFS= read -r line <&3; do :; done
+  kill -KILL -- "-$group" 2>/dev/null
+) &
+watcher=$!
+while :; do
+  wait "$child"
+  result=$?
+  kill -0 "$child" 2>/dev/null || break
+done
+kill "$watcher" 2>/dev/null
+wait "$watcher" 2>/dev/null
+exit "$result"
+'''
+
 
 def resolve_executable(name: str) -> str:
     executable = shutil.which(name)
@@ -148,6 +170,7 @@ class Collector:
         self.wsl = wsl
         self._lock = Lock()
         self._process = None
+        self._cancel_pipe = None
         self._stopped = Event()
 
     def _wsl_command(self) -> list[str]:
@@ -165,8 +188,19 @@ class Collector:
         # Node ignores proxy environment variables unless explicitly opted in.
         environment.append("NODE_USE_ENV_PROXY=1")
         return [wsl, "-d", self.wsl.distribution, "-e", "/usr/bin/timeout", "-k", "5",
-                str(max(1, int(self.timeout))), "env", *environment,
+                str(self.timeout), "/bin/bash", "-c", WSL_SUPERVISOR,
+                "auxdisp-codex-quota", "env", *environment,
                 self.wsl.executable, "list", "--api", "--json"]
+
+    def _terminate(self, process, cancel_pipe):
+        if cancel_pipe is not None:
+            cancel_pipe.close()
+            try:
+                process.wait(timeout=5)
+                return
+            except subprocess.TimeoutExpired:
+                pass
+        terminate_tree(process)
 
     def collect(self) -> tuple[Account, ...]:
         if self.wsl is None:
@@ -177,25 +211,38 @@ class Collector:
             # A cold distribution start adds latency outside the Linux budget.
             budget = self.timeout + WSL_START_GRACE
         options = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {"start_new_session": True}
+        cancel_read = cancel_pipe = None
         try:
             with self._lock:
                 if self._stopped.is_set():
                     raise DataError("COLLECTION_STOPPED")
+                if self.wsl is not None:
+                    read_fd, write_fd = os.pipe()
+                    cancel_read = os.fdopen(read_fd, "rb")
+                    cancel_pipe = os.fdopen(write_fd, "wb")
+                    options["stdin"] = cancel_read
                 process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **options)
+                if cancel_read is not None:
+                    cancel_read.close()
                 self._process = process
+                self._cancel_pipe = cancel_pipe
             try:
                 stdout, stderr = process.communicate(timeout=budget)
             except subprocess.TimeoutExpired:
-                terminate_tree(process)
+                self._terminate(process, cancel_pipe)
                 process.communicate()
                 raise DataError("TIMEOUT") from None
             finally:
                 with self._lock:
                     self._process = None
+                    self._cancel_pipe = None
             LOG.debug("Collector exit=%s stderr_bytes=%s", process.returncode, len(stderr))
+            if self._stopped.is_set():
+                raise DataError("COLLECTION_STOPPED")
             if process.returncode:
-                # The Linux timeout helper reports its own expiry as exit status 124.
-                if self.wsl is not None and process.returncode == 124:
+                # -k escalates TERM to KILL (137); wsl.exe can expose the
+                # terminating signal itself (9) instead of shell status 137.
+                if self.wsl is not None and process.returncode in (9, 124, 137):
                     raise DataError("TIMEOUT")
                 raise DataError(f"COMMAND_EXIT_{process.returncode}")
             try:
@@ -207,13 +254,19 @@ class Collector:
             raise
         except OSError:
             raise DataError("COMMAND_START_FAILED") from None
+        finally:
+            if cancel_read is not None:
+                cancel_read.close()
+            if cancel_pipe is not None:
+                cancel_pipe.close()
 
     def close(self) -> None:
         self._stopped.set()
         with self._lock:
             process = self._process
+            cancel_pipe = self._cancel_pipe
         if process is not None:
-            terminate_tree(process)
+            self._terminate(process, cancel_pipe)
 
 
 @dataclass(frozen=True)

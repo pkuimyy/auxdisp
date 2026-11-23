@@ -63,3 +63,15 @@ uv run --locked --no-sources python scripts/dev_display.py --headless ../../.art
 ```
 
 开发工具默认使用包内合成数据，始终不调用 codex-auth 或 USB，也不注册任务。`--fixture <路径>` 可以替换为 schema 1 的本地 JSON；`--inspect` 查看这份 fixture 的规范化数据。自定义 fixture 可能包含账户信息，勿公开原始输出。开发选项通过 `python scripts/dev_display.py --help` 查看；它们不出现在安装后的公开 CLI 中。开发脚本随源码包提供，不放入 wheel 的用户入口。
+
+## auxdisp-codex-quota WSL 集成测试
+
+常规测试默认跳过真实 WSL 检查。若需启用，选择已安装且具备 bash 和 GNU coreutils 的发行版，在设置好共享缓存后，从 `apps/auxdisp-codex-quota` 运行：
+
+```powershell
+$env:AUXDISP_TEST_WSL = 'Ubuntu-24.04'
+uv run --locked --no-sources pytest tests/test_wsl_integration.py -q
+Remove-Item Env:AUXDISP_TEST_WSL
+```
+
+这些检查启动合成 Linux 进程，验证 JSON 传输、取消、子进程清理和超时强杀，不调用 codex-auth、不读取账户、不注册任务，也不访问 USB。结果不代表物理设备兼容性验收。

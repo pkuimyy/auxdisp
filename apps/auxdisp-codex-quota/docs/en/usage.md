@@ -112,6 +112,7 @@ timeout_seconds = 30
 - The app forwards its own `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` to the distribution and sets `NODE_USE_ENV_PROXY=1` (Node 24 and newer require this variable to honor proxies). Environments without a proxy need none of these.
 - The distribution needs `bash` and coreutils `timeout` (present by default in Ubuntu and other mainstream distributions) plus codex-auth and Node.js installed inside it.
 - A cold distribution start adds latency; set `timeout_seconds` to at least 30 seconds. Linux-side and Windows-side expiries both display `TIMEOUT`.
+- `stop`, `restart`, and Ctrl+C cancel the active WSL collection, including its child processes. Other codex-auth commands running in the distribution are unaffected.
 - Token freshness still depends on actually using codex inside WSL: an account idle for longer than the token lifetime shows STALE once it expires; the app never refreshes tokens.
 
 For related error codes, see the WSL section in [troubleshooting](troubleshooting.md).

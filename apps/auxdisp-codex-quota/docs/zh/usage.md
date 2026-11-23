@@ -112,6 +112,7 @@ timeout_seconds = 30
 - 应用会把自身环境中的 `HTTP_PROXY`、`HTTPS_PROXY` 和 `NO_PROXY` 转发给发行版，并设置 `NODE_USE_ENV_PROXY=1`（Node 24 及以上需要该变量才会让请求走代理）。无代理环境不需要这些变量。
 - 发行版需要 `bash` 和 coreutils 的 `timeout`（Ubuntu 等主流发行版默认具备），并已在发行版内安装 codex-auth 与 Node.js。
 - 发行版冷启动有额外延迟，建议 `timeout_seconds` 至少 30 秒；Linux 侧超时与 Windows 侧超时同样显示 `TIMEOUT`。
+- `stop`、`restart` 和 Ctrl+C 会取消正在进行的 WSL 采集及其子进程，不影响发行版内其他独立运行的 codex-auth 命令。
 - token 的新鲜度仍由 WSL 内实际使用 codex 决定：某账号长期未在 WSL 内以活跃身份运行 codex 时，其 token 过期后显示 STALE，应用不会代为刷新。
 
 相关错误码见[排障](troubleshooting.md)的「WSL 模式错误」。

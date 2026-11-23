@@ -63,3 +63,15 @@ uv run --locked --no-sources python scripts/dev_display.py --headless ../../.art
 ```
 
 The tool defaults to bundled synthetic data and never invokes codex-auth, USB, or task registration. `--fixture <path>` loads local schema-1 JSON; `--inspect` prints normalized data from that fixture. Custom fixtures can contain identities; do not share raw output. Use `python scripts/dev_display.py --help` for developer options; these options are absent from the installed public CLI. The script is included in the source distribution, rather than the wheel's user entry points.
+
+## auxdisp-codex-quota WSL integration tests
+
+The normal test suite skips real WSL checks. To enable them, select an installed distribution with bash and GNU coreutils. From `apps/auxdisp-codex-quota`, with the shared cache configured:
+
+```powershell
+$env:AUXDISP_TEST_WSL = 'Ubuntu-24.04'
+uv run --locked --no-sources pytest tests/test_wsl_integration.py -q
+Remove-Item Env:AUXDISP_TEST_WSL
+```
+
+These checks start synthetic Linux processes to exercise JSON transport, cancellation, descendant cleanup, and timeout escalation. They do not invoke codex-auth, read accounts, register tasks, or access USB. They do not establish physical-device compatibility.

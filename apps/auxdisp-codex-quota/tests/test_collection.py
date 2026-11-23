@@ -174,6 +174,10 @@ class FakePopen:
             raise subprocess.TimeoutExpired("wsl", timeout)
         return FakePopen.result[0], FakePopen.result[1]
 
+    def wait(self, timeout=None):
+        assert self.cancel_pipe.closed
+        raise subprocess.TimeoutExpired("wsl", timeout)
+
     @property
     def returncode(self):
         return FakePopen.result[2]
@@ -198,7 +202,9 @@ def test_wsl_collection_builds_read_only_command_and_forwards_proxy(monkeypatch,
     assert len(collector.collect()) == 3
     command = fake_wsl_process.instances[0].command
     assert command[:8] == [WSL_EXE, "-d", "Ubuntu-24.04", "-e", "/usr/bin/timeout", "-k", "5", "20"]
-    assert command[8] == "env"
+    assert command[8:10] == ["/bin/bash", "-c"]
+    assert command[12] == "env"
+    assert fake_wsl_process.instances[0].kwargs["stdin"].closed
     assert "PATH=/home/u/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" in command
     assert "HTTP_PROXY=http://127.0.0.1:7890" in command
     assert "NODE_USE_ENV_PROXY=1" in command
@@ -226,19 +232,41 @@ def test_wsl_collection_reports_grace_expiry_as_timeout(monkeypatch, fake_wsl_pr
     use_wsl_exe(monkeypatch)
     fake_wsl_process.expire_at = 10
     launch = WslLaunch("Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin")
+    original = Collector._terminate
+
+    def terminate(self, process, pipe):
+        process.cancel_pipe = pipe
+        original(self, process, pipe)
+
+    monkeypatch.setattr(Collector, "_terminate", terminate)
     with pytest.raises(DataError, match="TIMEOUT"):
         Collector(launch.executable, timeout=7, wsl=launch).collect()
     assert fake_wsl_process.instances[0].timeouts == [7 + WSL_START_GRACE, None]
     assert fake_wsl_process.terminated == [fake_wsl_process.instances[0]]
 
 
-def test_wsl_linux_timeout_exit_status_maps_to_timeout(monkeypatch, fake_wsl_process):
+@pytest.mark.parametrize("status", [9, 124, 137])
+def test_wsl_linux_timeout_exit_status_maps_to_timeout(monkeypatch, fake_wsl_process, status):
     use_wsl_exe(monkeypatch)
-    fake_wsl_process.result = (b"", b"", 124)
+    fake_wsl_process.result = (b"", b"", status)
     launch = WslLaunch("Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin")
     with pytest.raises(DataError, match="TIMEOUT"):
         Collector(launch.executable, timeout=20, wsl=launch).collect()
     assert fake_wsl_process.terminated == []
+
+
+def test_wsl_close_signals_linux_before_terminating_windows(monkeypatch):
+    from unittest.mock import Mock
+    launch = WslLaunch("Ubuntu-24.04", "/home/u/bin/codex-auth", "/home/u/bin")
+    collector = Collector(wsl=launch)
+    process, pipe = Mock(), Mock()
+    collector._process, collector._cancel_pipe = process, pipe
+    process.wait.side_effect = lambda **kwargs: pipe.close.assert_called_once()
+    terminate = Mock()
+    monkeypatch.setattr("auxdisp_codex_quota.collector.terminate_tree", terminate)
+    collector.close()
+    process.wait.assert_called_once_with(timeout=5)
+    terminate.assert_not_called()
 
 
 def test_wsl_other_failures_keep_command_exit_codes(monkeypatch, fake_wsl_process):
